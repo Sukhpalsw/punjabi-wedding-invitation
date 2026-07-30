@@ -1,0 +1,7 @@
+# Netlify configuration for the wedding invitation site.
+# This does not change how/where the site is built or published —
+# it only adds the password-gate Edge Function in front of every request.
+
+[[edge_functions]]
+  path = "/*"
+  function = "auth-gate"

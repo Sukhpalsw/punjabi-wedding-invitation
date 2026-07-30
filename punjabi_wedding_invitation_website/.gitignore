@@ -1,0 +1,7 @@
+# Local environment variables — never commit real secrets.
+.env
+.env.*
+!.env.example
+
+# Netlify CLI local state
+.netlify/
