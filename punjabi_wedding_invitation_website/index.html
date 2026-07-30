@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <meta
+    name="theme-color"
+    content="#6a5043"
+  />
+
+  <title>Sharan & Arsh — Wedding Invitation</title>
+
+  <link
+    rel="preconnect"
+    href="https://fonts.googleapis.com"
+  />
+
+  <link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin
+  />
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=Noto+Sans+Gurmukhi:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body class="locked">
+
+  <!-- Background effects -->
+  <canvas
+    id="particles"
+    aria-hidden="true"
+  ></canvas>
+
+  <div
+    id="scrollProgress"
+    class="scroll-progress"
+    aria-hidden="true"
+  ></div>
+
+  <div
+    id="cursorGlow"
+    class="cursor-glow"
+    aria-hidden="true"
+  ></div>
+
+  <div
+    class="dream-background"
+    aria-hidden="true"
+  >
+    <div class="dream-orb orb-one"></div>
+    <div class="dream-orb orb-two"></div>
+    <div class="dream-orb orb-three"></div>
+  </div>
+
+  <div
+    id="petalContainer"
+    class="petal-container"
+    aria-hidden="true"
+  ></div>
+
+  <!-- Floating controls -->
+  <button
+    id="musicToggle"
+    class="floating-button music-button"
+    type="button"
+    aria-label="Toggle music"
+    aria-pressed="false"
+  >
+    <span class="music-icon">♫</span>
+    <span class="music-label">Music</span>
+  </button>
+
+  <button
+    id="backToTop"
+    class="floating-button top-button"
+    type="button"
+    aria-label="Back to top"
+  >
+    ↑
+  </button>
+
+  <!-- Invitation opening screen -->
+  <section
+    id="intro"
+    class="intro-screen"
+  >
+    <div class="intro-pattern"></div>
+    <div class="intro-glow"></div>
+
+    <div class="intro-content">
+      <p class="eyebrow">
+        You are warmly invited
+      </p>
+
+      <button
+        id="sealButton"
+        class="seal-button"
+        type="button"
+        aria-label="Open invitation"
+      >
+        <span class="seal-ring">
+          <span class="seal-inner-ring">
+            <span class="seal-symbol">ੴ</span>
+          </span>
+        </span>
+      </button>
+
+      <p class="intro-title">Open the Invitation</p>
+
+      <p class="intro-note">
+        Tap the golden seal to begin
+      </p>
+    </div>
+  </section>
+
+  <!-- Hero -->
+  <header
+    id="hero"
+    class="hero"
+  >
+    <nav class="navbar">
+      <a
+        href="#hero"
+        class="brand"
+      >
+        A<span>♡</span>S
+      </a>
+
+      <button
+        id="menuButton"
+        class="menu-button"
+        type="button"
+        aria-expanded="false"
+        aria-controls="navLinks"
+        aria-label="Open navigation"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <div
+        id="navLinks"
+        class="nav-links"
+      >
+        <a href="#story">Our Story</a>
+        <a href="#events">Events</a>
+        <a href="#venue">Venue</a>
+        <a href="#gallery">Gallery</a>
+        <a href="#rsvp">RSVP</a>
+      </div>
+    </nav>
+
+    <div class="hero-overlay"></div>
+    <div class="hero-light"></div>
+
+    <div class="hero-content reveal">
+      <div
+        class="hero-stars"
+        aria-hidden="true"
+      >
+        <span>✦</span>
+        <span>✧</span>
+        <span>✦</span>
+        <span>✧</span>
+        <span>✦</span>
+      </div>
+
+      <p class="eyebrow">
+        With the blessings of our families
+      </p>
+
+      <p class="gurmukhi hero-gurmukhi">
+        ਸਤਿਗੁਰੁ ਸਾਖੀ ਹੋਇ
+      </p>
+
+      <h1 class="animated-couple-names">
+        <span class="couple-name name-one">
+          ArshJotSingh  
+        </span>
+
+        <small class="animated-ampersand">
+          &
+        </small>
+
+        <span class="couple-name name-two">
+        SharanJeetKaur
+        </span>
+      </h1>
+
+      <div
+        class="gold-divider"
+        aria-hidden="true"
+      >
+        <span></span>
+        <i>✦</i>
+        <span></span>
+      </div>
+
+      <p class="hero-date">
+        December 12 · Punjab
+      </p>
+
+      <a
+        class="primary-button magnetic-button"
+        href="#events"
+      >
+        Discover the celebration
+        <span aria-hidden="true">→</span>
+      </a>
+    </div>
+
+    <div class="scroll-hint">
+      <span>Scroll</span>
+      <i></i>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- Quote -->
+    <section class="quote-section section">
+      <div class="quote-decoration quote-left">
+        ❈
+      </div>
+
+      <div class="quote-decoration quote-right">
+        ❈
+      </div>
+
+      <div class="ornament reveal" aria-hidden="true">
+        ✦
+      </div>
+
+      <blockquote class="gurmukhi reveal">
+        ਰਾਹ ਦੋ ਸਨ, ਮੰਜ਼ਿਲ ਇੱਕ ਸੀ।<br />
+        ਵਕਤ ਨੇ ਮਿਲਾਇਆ, ਵਾਹਿਗੁਰੂ ਨੇ ਨਿਭਾਇਆ॥
+      </blockquote>
+
+      <p class="translation reveal">
+        Two paths became one journey, held together by grace.
+      </p>
+    </section>
+
+    <div
+      class="dream-divider"
+      aria-hidden="true"
+    >
+      <span></span>
+      <i>✦</i>
+      <span></span>
+    </div>
+
+    <!-- Our story -->
+    <section
+      id="story"
+      class="story-section section"
+    >
+      <div class="section-heading reveal">
+        <p class="eyebrow">
+          Chapter One
+        </p>
+
+        <h2>Our Story</h2>
+
+        <div class="heading-decoration" aria-hidden="true">
+          <span></span>
+          <i>❈</i>
+          <span></span>
+        </div>
+      </div>
+
+      <div class="story-grid">
+
+        <div class="story-copy reveal">
+          <span class="story-number">
+            01
+          </span>
+
+          <p>
+            What began as a simple conversation slowly became
+            a friendship, a promise and a lifetime we now cannot
+            imagine without each other.
+          </p>
+
+          <p>
+            Surrounded by the people who shaped us, we are
+            beginning our next chapter and would be honoured
+            to celebrate it with you.
+          </p>
+
+          <div class="signature">
+            ArshJotSingh & SharanJeetKaur
+          </div>
+        </div>
+
+        <div class="card-visual reveal">
+          <div class="card-halo"></div>
+
+          <div class="story-image-frame tilt-card">
+            <img
+              src="assets/story.jpg"
+              alt="ArshJotSingh and SharanJeetKaur sharing a close, candid moment together"
+              loading="lazy"
+            />
+
+            <div class="image-shine"></div>
+
+            <div class="image-caption">
+              <span>Two Souls</span>
+              <strong>One Journey</strong>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Countdown -->
+    <section class="countdown-section section">
+      <div class="countdown-pattern"></div>
+
+      <div class="section-heading light reveal">
+        <p class="eyebrow">
+          Until forever begins
+        </p>
+
+        <h2>Wedding Countdown</h2>
+
+        <div class="heading-decoration light-decoration" aria-hidden="true">
+          <span></span>
+          <i>✦</i>
+          <span></span>
+        </div>
+      </div>
+
+      <div
+        id="countdown"
+        class="countdown reveal"
+      >
+        <div>
+          <strong id="days">00</strong>
+          <span>Days</span>
+        </div>
+
+        <div>
+          <strong id="hours">00</strong>
+          <span>Hours</span>
+        </div>
+
+        <div>
+          <strong id="minutes">00</strong>
+          <span>Minutes</span>
+        </div>
+
+        <div>
+          <strong id="seconds">00</strong>
+          <span>Seconds</span>
+        </div>
+      </div>
+    </section>
+
+    <div
+      class="dream-divider"
+      aria-hidden="true"
+    >
+      <span></span>
+      <i>✦</i>
+      <span></span>
+    </div>
+
+    <!-- Events: only three -->
+    <section
+      id="events"
+      class="events-section section"
+    >
+      <div class="section-heading reveal">
+        <p class="eyebrow">
+          The Celebration
+        </p>
+
+        <h2>Wedding Events</h2>
+
+        <p class="section-description">
+          Three beautiful moments, one unforgettable journey.
+        </p>
+
+        <div class="heading-decoration" aria-hidden="true">
+          <span></span>
+          <i>❈</i>
+          <span></span>
+        </div>
+      </div>
+
+      <div class="events-grid">
+
+        <article class="event-card tilt-card reveal">
+          <div class="event-glow"></div>
+
+          <figure class="event-photo event-photo--contain">
+            <img
+              src="assets/medndi.jpg"
+              alt="Illustration of a bride showing intricate henna hand designs, framed by a marigold garland"
+              loading="lazy"
+            />
+          </figure>
+
+          <div class="event-body">
+            <div class="event-icon">
+              ❋
+            </div>
+
+            <span class="event-number">
+              01
+            </span>
+
+            <p class="event-day">
+              Not Confirmed Yet
+            </p>
+
+            <h3>Mehndi</h3>
+
+            <p class="event-time">
+              Time to be confirmed
+            </p>
+
+            <p class="event-location">
+              Family Residence
+            </p>
+
+            <p class="dress-code">
+              Mehndi greens and joyful colours
+            </p>
+          </div>
+        </article>
+
+        <article class="event-card tilt-card reveal">
+          <div class="event-glow"></div>
+
+          <figure class="event-photo">
+            <img
+              src="assets/sangeet.jpg"
+              alt="Sangeet night celebration with festive lights"
+              loading="lazy"
+            />
+          </figure>
+
+          <div class="event-body">
+            <div class="event-icon">
+              ♫
+            </div>
+
+            <span class="event-number">
+              02
+            </span>
+
+            <p class="event-day">
+              Not Confirmed Yet
+            </p>
+
+            <h3>Sangeet</h3>
+
+            <p class="event-time">
+              Time to be confirmed
+            </p>
+
+            <p class="event-location">
+              The Royal Courtyard
+            </p>
+
+            <p class="dress-code">
+              Evening elegance
+            </p>
+          </div>
+        </article>
+
+        <article class="event-card tilt-card reveal">
+          <div class="event-glow"></div>
+
+          <figure class="event-photo event-photo--contain">
+            <img
+              src="assets/anand-karaj.jpg"
+              alt="Golden Palki Sahib canopy decorated with flowers inside the Gurdwara for the Anand Karaj ceremony"
+              loading="lazy"
+            />
+          </figure>
+
+          <div class="event-body">
+            <div class="event-icon gurmukhi">
+              ੴ
+            </div>
+
+            <span class="event-number">
+              03
+            </span>
+
+            <p class="event-day">
+              Not Confirmed Yet
+            </p>
+
+            <h3>Anand Karaj</h3>
+
+            <p class="event-time">
+              Time to be confirmed
+            </p>
+
+            <p class="event-location">
+              Gurdwara Sahib
+            </p>
+
+            <p class="dress-code">
+              Please dress respectfully for the ceremony
+            </p>
+          </div>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- Venue -->
+    <section
+      id="venue"
+      class="venue-section section"
+    >
+      <div class="venue-image reveal">
+        <div class="venue-image-overlay"></div>
+
+        <div class="venue-image-label">
+          <span>The beginning of forever</span>
+        </div>
+      </div>
+
+      <div class="venue-card reveal">
+        <p class="eyebrow">
+          Where to join us
+        </p>
+
+        <h2>Celebration Place</h2>
+
+        <p class="venue-description">
+          A beautiful setting where love, tradition and two
+          families will come together for an unforgettable
+          celebration.
+        </p>
+
+        <p class="venue-location">
+          Punjab, India
+        </p>
+
+        <p class="venue-address">
+          The complete wedding venue address will be added
+          after confirmation.
+        </p>
+
+        <a
+          class="secondary-button magnetic-button"
+          href="https://maps.google.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          View location
+          <span aria-hidden="true">→</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- Gallery -->
+    <section
+      id="gallery"
+      class="gallery-section section"
+    >
+      <div class="section-heading reveal">
+        <p class="eyebrow">
+          Our Memories
+        </p>
+
+        <h2>Gallery</h2>
+
+        <p class="section-description">
+          Moments of love, tradition and celebration.
+        </p>
+
+        <div class="heading-decoration" aria-hidden="true">
+          <span></span>
+          <i>❈</i>
+          <span></span>
+        </div>
+      </div>
+
+      <div class="gallery-grid">
+
+        <figure class="gallery-item tilt-card reveal">
+          <button
+            type="button"
+            class="gallery-trigger"
+            data-index="0"
+            aria-label="View larger photo: Together, always"
+          >
+            <img
+              src="assets/gallery-1.jpg"
+              alt="Bride and groom sharing a candid close moment"
+              loading="lazy"
+            />
+          </button>
+
+          <div class="gallery-overlay"></div>
+
+          <figcaption>
+            <span>Our Journey</span>
+            <strong>Together, always</strong>
+          </figcaption>
+        </figure>
+
+        <figure class="gallery-item tilt-card reveal">
+          <button
+            type="button"
+            class="gallery-trigger"
+            data-index="1"
+            aria-label="View larger photo: Grace and tradition"
+          >
+            <img
+              src="assets/gallery-2.jpg"
+              alt="Bride in a red dupatta with gold embroidery, smiling outdoors"
+              loading="lazy"
+            />
+          </button>
+
+          <div class="gallery-overlay"></div>
+
+          <figcaption>
+            <span>A Timeless Moment</span>
+            <strong>Grace and tradition</strong>
+          </figcaption>
+        </figure>
+
+        <figure class="gallery-item tilt-card reveal">
+          <button
+            type="button"
+            class="gallery-trigger"
+            data-index="2"
+            aria-label="View larger photo: A night to remember"
+          >
+            <img
+              src="assets/gallery-5.jpg"
+              alt="Groom in a lavender turban and cream jacket, full length, at the evening celebration"
+              loading="lazy"
+            />
+          </button>
+
+          <div class="gallery-overlay"></div>
+
+          <figcaption>
+            <span>The Celebration</span>
+            <strong>A night to remember</strong>
+          </figcaption>
+        </figure>
+
+        <figure class="gallery-item tilt-card reveal">
+          <button
+            type="button"
+            class="gallery-trigger"
+            data-index="3"
+            aria-label="View larger photo: The groom's story"
+          >
+            <img
+              src="assets/gallery-4.jpg"
+              alt="Groom in a white kurta and orange turban on a rooftop"
+              loading="lazy"
+            />
+          </button>
+
+          <div class="gallery-overlay"></div>
+
+          <figcaption>
+            <span>Ready for Forever</span>
+            <strong>The groom's story</strong>
+          </figcaption>
+        </figure>
+
+        <figure class="gallery-item tilt-card reveal">
+          <button
+            type="button"
+            class="gallery-trigger"
+            data-index="4"
+            aria-label="View larger photo: Love in every frame"
+          >
+            <img
+              src="assets/gallery-3.jpg"
+              alt="Two-photo collage of the bride and groom"
+              loading="lazy"
+            />
+          </button>
+
+          <div class="gallery-overlay"></div>
+
+          <figcaption>
+            <span>Sweet Beginnings</span>
+            <strong>Love in every frame</strong>
+          </figcaption>
+        </figure>
+
+      </div>
+    </section>
+
+    <!-- RSVP -->
+    <section
+      id="rsvp"
+      class="rsvp-section section"
+    >
+      <div class="rsvp-light"></div>
+
+      <div class="rsvp-panel reveal">
+        <div class="section-heading">
+          <p class="eyebrow">
+            Kindly reply
+          </p>
+
+          <h2>RSVP</h2>
+
+          <p>
+            Please respond between 20 September and
+            20 November 2026.
+          </p>
+        </div>
+
+        <form id="rsvpForm">
+
+          <div class="form-row">
+            <label>
+              Full name
+
+              <input
+                type="text"
+                name="name"
+                required
+                placeholder="Your name"
+              />
+            </label>
+
+            <label>
+              Number of guests
+
+              <select
+                name="guests"
+                required
+              >
+                <option value="">Choose</option>
+                <option value="1">1 Guest</option>
+                <option value="2">2 Guests</option>
+                <option value="3">3 Guests</option>
+                <option value="4">4 Guests</option>
+                <option value="5+">5+ Guests</option>
+              </select>
+            </label>
+          </div>
+
+          <fieldset>
+            <legend>
+              Will you attend?
+            </legend>
+
+            <label class="radio-option">
+              <input
+                type="radio"
+                name="attendance"
+                value="Joyfully attending"
+                required
+              />
+
+              <span>
+                Joyfully attending
+              </span>
+            </label>
+
+            <label class="radio-option">
+              <input
+                type="radio"
+                name="attendance"
+                value="Regretfully unable"
+                required
+              />
+
+              <span>
+                Regretfully unable
+              </span>
+            </label>
+          </fieldset>
+
+          <label>
+            Message for the couple
+
+            <textarea
+              name="message"
+              rows="4"
+              placeholder="Share your wishes..."
+            ></textarea>
+          </label>
+
+          <button
+            class="primary-button submit-button magnetic-button"
+            type="submit"
+          >
+            Send RSVP
+            <span aria-hidden="true">→</span>
+          </button>
+
+          <p
+            id="formMessage"
+            class="form-message"
+            role="status"
+          ></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- Closing -->
+    <section class="closing-section section">
+      <div class="closing-glow"></div>
+
+      <div class="closing-symbol reveal">
+        ੴ
+      </div>
+
+      <p class="gurmukhi reveal">
+        ਤੁਹਾਡੀ ਹਾਜ਼ਰੀ ਸਾਡੇ ਲਈ ਸਭ ਤੋਂ ਸੋਹਣਾ ਤੋਹਫ਼ਾ ਹੋਵੇਗੀ।
+      </p>
+
+      <p class="reveal">
+        Your presence will be the most beautiful gift.
+      </p>
+
+      <div class="closing-names reveal">
+        <span class="name-one">
+          ArshJotSingh
+        </span>
+
+        <small class="closing-ampersand">
+          &
+        </small>
+
+        <span class="name-two">
+          SharanJeetKaur
+        </span>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>
+      Made with love for our wedding celebration.
+    </p>
+
+    <p>
+      © <span id="year"></span> ArshJotSingh & SharanJeetKaur.
+    </p>
+  </footer>
+
+  <audio
+    id="backgroundMusic"
+    loop
+    preload="none"
+  >
+    <source
+      src="assets/wedding-music.mp3"
+      type="audio/mpeg"
+    />
+  </audio>
+
+  <!-- Gallery lightbox -->
+  <div
+    id="lightbox"
+    class="lightbox"
+    aria-hidden="true"
+  >
+    <button
+      id="lightboxClose"
+      class="lightbox-close"
+      type="button"
+      aria-label="Close image"
+    >
+      &times;
+    </button>
+
+    <button
+      id="lightboxPrev"
+      class="lightbox-nav lightbox-prev"
+      type="button"
+      aria-label="Previous photo"
+    >
+      &#8592;
+    </button>
+
+    <figure class="lightbox-figure">
+      <img
+        id="lightboxImage"
+        class="lightbox-image"
+        src=""
+        alt=""
+      />
+
+      <figcaption
+        id="lightboxCaption"
+        class="lightbox-caption"
+      ></figcaption>
+    </figure>
+
+    <button
+      id="lightboxNext"
+      class="lightbox-nav lightbox-next"
+      type="button"
+      aria-label="Next photo"
+    >
+      &#8594;
+    </button>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
