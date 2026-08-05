@@ -105,14 +105,8 @@ if (particlesCanvas) {
     const area =
       particlesCanvas.width * particlesCanvas.height;
 
-    // Calmer, softer density overall, and fewer still on small/mobile
-    // screens where a dense field feels busy rather than ambient.
-    const isNarrowViewport = window.innerWidth < 700;
-    const maxParticles = isNarrowViewport ? 26 : 55;
-    const areaDivisor = isNarrowViewport ? 32000 : 27000;
-
     const count =
-      Math.min(maxParticles, Math.floor(area / areaDivisor));
+      Math.min(70, Math.floor(area / 22000));
 
     particles =
       Array.from({ length: count }, createParticle);
@@ -458,10 +452,8 @@ function createPetal() {
   );
 }
 
-let petalIntervalId = null;
-
 if (!prefersReducedMotion) {
-  petalIntervalId = window.setInterval(
+  window.setInterval(
     createPetal,
     950
   );
@@ -476,19 +468,6 @@ if (!prefersReducedMotion) {
       index * 250
     );
   }
-
-  // Stop spawning entirely while the tab isn't visible, instead of
-  // firing on a timer and immediately bailing out each time.
-  document.addEventListener("visibilitychange", () => {
-    if (document.hidden) {
-      if (petalIntervalId) {
-        window.clearInterval(petalIntervalId);
-        petalIntervalId = null;
-      }
-    } else if (!petalIntervalId) {
-      petalIntervalId = window.setInterval(createPetal, 950);
-    }
-  });
 }
 
 // ------------------------------------------------------------
@@ -680,19 +659,15 @@ document
   });
 
 // ------------------------------------------------------------
-// SPARKLE BURST (used for the opening seal, and a smaller
-// restrained version for a successful RSVP)
+// OPENING SPARKLES
 // ------------------------------------------------------------
 
-function createOpeningSparkles(options = {}) {
+function createOpeningSparkles() {
   if (prefersReducedMotion) {
     return;
   }
 
-  const sparkleCount = options.count || 30;
-  const hasCustomOrigin =
-    typeof options.x === "number" &&
-    typeof options.y === "number";
+  const sparkleCount = 30;
 
   for (
     let index = 0;
@@ -704,11 +679,6 @@ function createOpeningSparkles(options = {}) {
 
     spark.className =
       "open-spark";
-
-    if (hasCustomOrigin) {
-      spark.style.left = `${options.x}px`;
-      spark.style.top = `${options.y}px`;
-    }
 
     const angle =
       (
@@ -991,16 +961,6 @@ if (menuButton && navLinks) {
     .forEach((link) => {
       link.addEventListener("click", closeMobileMenu);
     });
-
-  document.addEventListener("keydown", (event) => {
-    if (
-      event.key === "Escape" &&
-      navLinks.classList.contains("open")
-    ) {
-      closeMobileMenu();
-      menuButton.focus();
-    }
-  });
 }
 
 // ------------------------------------------------------------
@@ -1211,15 +1171,6 @@ if (venueImage) {
   } else {
     venueImage.classList.add("visible");
   }
-
-  // venue.jpg is a CSS background, not an <img>, so it can't fire a
-  // native "error" event — probe it directly so a missing photo still
-  // gets the same graceful placeholder treatment as everywhere else.
-  const venuePhotoProbe = new Image();
-  venuePhotoProbe.addEventListener("error", () => {
-    venueImage.classList.add("media-missing");
-  });
-  venuePhotoProbe.src = "assets/venue.jpg";
 }
 
 // ------------------------------------------------------------
@@ -1431,12 +1382,6 @@ const rsvpForm =
 const formMessage =
   document.getElementById("formMessage");
 
-const rsvpSuccess =
-  document.getElementById("rsvpSuccess");
-
-const rsvpSuccessName =
-  document.getElementById("rsvpSuccessName");
-
 if (rsvpForm) {
   rsvpForm.addEventListener(
     "submit",
@@ -1467,31 +1412,8 @@ if (rsvpForm) {
         );
 
         if (formMessage) {
-          formMessage.textContent = "";
-        }
-
-        // Swap the form for an elegant confirmation — this also stops
-        // an accidental second click on Send RSVP, since the button
-        // is no longer on screen.
-        if (rsvpSuccess) {
-          if (rsvpSuccessName && entry.name) {
-            rsvpSuccessName.textContent = `, ${entry.name}!`;
-          }
-
-          rsvpForm.hidden = true;
-          rsvpSuccess.hidden = false;
-          rsvpSuccess.focus();
-
-          const rect = rsvpSuccess.getBoundingClientRect();
-          createOpeningSparkles({
-            count: 14,
-            x: rect.left + rect.width / 2,
-            y: rect.top + rect.height / 2
-          });
-        } else if (formMessage) {
-          // Fallback if the success panel isn't present for some reason.
           formMessage.textContent =
-            `Thank you, ${entry.name}! Your response has been saved on this device.`;
+            `Thank you, ${entry.name}! Your RSVP has been received.`;
         }
 
         rsvpForm.reset();
