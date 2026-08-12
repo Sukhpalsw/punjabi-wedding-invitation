@@ -36,52 +36,6 @@ const hasFinePointer =
     "(pointer: fine)"
   ).matches;
 
-const heroBg =
-  document.querySelector(".hero-bg");
-
-const heroLight =
-  document.querySelector(".hero-light");
-
-const heroStars =
-  document.querySelector(".hero-stars");
-
-// Hero parallax depth layers: mouse offset (fine pointers only) and
-// scroll offset are combined here into one write per layer, so the two
-// inputs never fight over the same custom property. Declared above
-// updateScrollEffects (which calls applyHeroParallax on every scroll
-// tick) so there is no temporal-dead-zone risk on first invocation.
-let heroMouseX = 0;
-let heroMouseY = 0;
-
-function applyHeroParallax() {
-  if (!hero || prefersReducedMotion) {
-    return;
-  }
-
-  const scrollDepth =
-    Math.min(window.scrollY / window.innerHeight, 1) * 18;
-
-  if (heroBg) {
-    heroBg.style.setProperty("--bg-x", `${heroMouseX * 6}px`);
-    heroBg.style.setProperty("--bg-y", `${heroMouseY * 4 + scrollDepth * 0.25}px`);
-  }
-
-  if (heroLight) {
-    heroLight.style.setProperty("--light-x", `${heroMouseX * 10}px`);
-    heroLight.style.setProperty("--light-y", `${heroMouseY * 7 + scrollDepth * 0.45}px`);
-  }
-
-  if (heroStars) {
-    heroStars.style.transform =
-      `translateX(-50%) translate3d(${heroMouseX * 16}px, ${heroMouseY * 12 + scrollDepth * 0.7}px, 0)`;
-  }
-
-  if (heroContent) {
-    heroContent.style.setProperty("--hero-x", `${heroMouseX * 14}px`);
-    heroContent.style.setProperty("--hero-y", `${heroMouseY * 10 - scrollDepth}px`);
-  }
-}
-
 // ------------------------------------------------------------
 // LOADING SCREEN
 // ------------------------------------------------------------
@@ -386,8 +340,6 @@ function updateScrollEffects() {
   }
 
   lastScrollY = currentScrollY;
-
-  applyHeroParallax();
 }
 
 // rAF-throttled: no matter how many "scroll" events the browser fires,
@@ -430,68 +382,6 @@ if (backToTopButton) {
 // FLOATING PETALS
 // ------------------------------------------------------------
 
-// Three depth tiers so the drift reads as actual perspective rather
-// than randomly-sized petals: far ones are small, slow and blurry (deep
-// background), mid ones are the crisp default layer, near ones are
-// large, fast and only lightly softened (shallow depth of field, as if
-// the camera is focused on the middle distance).
-const PETAL_TIERS = {
-  far: {
-    sizeMin: 5,
-    sizeMax: 9,
-    durationMin: 15,
-    durationMax: 22,
-    blurMin: 1.6,
-    blurMax: 3,
-    opacityMin: 0.16,
-    opacityMax: 0.3,
-    tumble: 8,
-    weight: 0.3
-  },
-  mid: {
-    sizeMin: 9,
-    sizeMax: 15,
-    durationMin: 10,
-    durationMax: 15,
-    blurMin: 0,
-    blurMax: 0.6,
-    opacityMin: 0.4,
-    opacityMax: 0.6,
-    tumble: 16,
-    weight: 0.45
-  },
-  near: {
-    sizeMin: 16,
-    sizeMax: 24,
-    durationMin: 6,
-    durationMax: 9,
-    blurMin: 0.4,
-    blurMax: 1.2,
-    opacityMin: 0.55,
-    opacityMax: 0.82,
-    tumble: 28,
-    weight: 0.25
-  }
-};
-
-function pickPetalTier() {
-  const roll = Math.random();
-
-  if (roll < PETAL_TIERS.far.weight) {
-    return "far";
-  }
-
-  if (roll < PETAL_TIERS.far.weight + PETAL_TIERS.mid.weight) {
-    return "mid";
-  }
-
-  return "near";
-}
-
-function randomBetween(min, max) {
-  return Math.random() * (max - min) + min;
-}
-
 function createPetal() {
   if (
     !petalContainer ||
@@ -504,15 +394,23 @@ function createPetal() {
   const petal =
     document.createElement("span");
 
-  const tierName = pickPetalTier();
-  const tier = PETAL_TIERS[tierName];
-
   petal.className =
-    `floating-petal petal-${tierName}`;
+    "floating-petal";
 
-  const size = randomBetween(tier.sizeMin, tier.sizeMax);
-  const duration = randomBetween(tier.durationMin, tier.durationMax);
-  const delay = Math.random() * 1.3;
+  // Occasional larger, softer-focus petals give a subtle sense of depth
+  // among the smaller sharp ones.
+  const isSoftFocus = Math.random() < 0.25;
+
+  const size =
+    isSoftFocus
+      ? Math.random() * 8 + 15
+      : Math.random() * 8 + 6;
+
+  const duration =
+    Math.random() * 8 + 10;
+
+  const delay =
+    Math.random() * 1.3;
 
   petal.style.left =
     `${Math.random() * 100}vw`;
@@ -529,14 +427,14 @@ function createPetal() {
   petal.style.animationDelay =
     `${delay}s`;
 
-  petal.style.setProperty(
-    "--petal-opacity",
-    String(randomBetween(tier.opacityMin, tier.opacityMax))
-  );
+  petal.style.opacity =
+    String(
+      Math.random() * 0.35 + 0.35
+    );
 
   petal.style.setProperty(
     "--petal-blur",
-    `${randomBetween(tier.blurMin, tier.blurMax)}px`
+    `${isSoftFocus ? Math.random() * 1.5 + 1 : Math.random() * 0.6}px`
   );
 
   // A gentle random wander left/right rather than every petal tracing
@@ -549,7 +447,6 @@ function createPetal() {
   petal.style.setProperty("--rotate-a", `${spinDirection * (Math.random() * 100 + 80)}deg`);
   petal.style.setProperty("--rotate-b", `${spinDirection * (Math.random() * 180 + 220)}deg`);
   petal.style.setProperty("--rotate-c", `${spinDirection * (Math.random() * 260 + 420)}deg`);
-  petal.style.setProperty("--tumble", `${spinDirection * -1 * tier.tumble}deg`);
 
   petalContainer.appendChild(petal);
 
@@ -563,24 +460,15 @@ function createPetal() {
 
 let petalIntervalId = null;
 
-// Fewer petals in flight at once on small screens: a longer spawn
-// interval and a smaller opening burst, rather than trying to render
-// the same density in a much smaller viewport.
-const PETAL_SPAWN_INTERVAL_MS =
-  window.innerWidth < 700 ? 1500 : 950;
-
-const PETAL_INITIAL_BURST =
-  window.innerWidth < 700 ? 4 : 7;
-
 if (!prefersReducedMotion) {
   petalIntervalId = window.setInterval(
     createPetal,
-    PETAL_SPAWN_INTERVAL_MS
+    950
   );
 
   for (
     let index = 0;
-    index < PETAL_INITIAL_BURST;
+    index < 7;
     index += 1
   ) {
     window.setTimeout(
@@ -598,7 +486,7 @@ if (!prefersReducedMotion) {
         petalIntervalId = null;
       }
     } else if (!petalIntervalId) {
-      petalIntervalId = window.setInterval(createPetal, PETAL_SPAWN_INTERVAL_MS);
+      petalIntervalId = window.setInterval(createPetal, 950);
     }
   });
 }
@@ -619,7 +507,7 @@ if (
       const bounds =
         hero.getBoundingClientRect();
 
-      heroMouseX =
+      const horizontal =
         (
           event.clientX -
           bounds.left
@@ -627,7 +515,7 @@ if (
         bounds.width -
         0.5;
 
-      heroMouseY =
+      const vertical =
         (
           event.clientY -
           bounds.top
@@ -635,17 +523,30 @@ if (
         bounds.height -
         0.5;
 
-      applyHeroParallax();
+      heroContent.style.setProperty(
+        "--hero-x",
+        `${horizontal * 14}px`
+      );
+
+      heroContent.style.setProperty(
+        "--hero-y",
+        `${vertical * 10}px`
+      );
     }
   );
 
   hero.addEventListener(
     "mouseleave",
     () => {
-      heroMouseX = 0;
-      heroMouseY = 0;
+      heroContent.style.setProperty(
+        "--hero-x",
+        "0px"
+      );
 
-      applyHeroParallax();
+      heroContent.style.setProperty(
+        "--hero-y",
+        "0px"
+      );
     }
   );
 }
@@ -1029,38 +930,21 @@ if (musicToggle && backgroundMusic) {
 const introScreen =
   document.getElementById("intro");
 
-const introCard =
-  document.getElementById("introCard");
-
 const sealButton =
   document.getElementById("sealButton");
-
-// How long the 3D cover-opening rotation takes, in ms — the whole intro
-// overlay only starts dissolving once the card has actually swung open,
-// so the two stages read as one continuous cinematic beat rather than
-// two things happening at once.
-const CARD_OPEN_MS = prefersReducedMotion ? 60 : 1300;
 
 if (sealButton) {
   sealButton.addEventListener(
     "click",
     () => {
-      if (introCard) {
-        introCard.classList.add("opened");
+      if (introScreen) {
+        introScreen.classList.add("opened");
       }
 
-      sealButton.setAttribute("aria-expanded", "true");
+      document.body.classList.remove("locked");
 
       createOpeningSparkles();
       playBackgroundMusic();
-
-      window.setTimeout(() => {
-        if (introScreen) {
-          introScreen.classList.add("opened");
-        }
-
-        document.body.classList.remove("locked");
-      }, CARD_OPEN_MS);
     },
     { once: true }
   );
@@ -1167,12 +1051,12 @@ if (navLinks && "IntersectionObserver" in window) {
 // ------------------------------------------------------------
 
 // ============================================================
-// WEDDING DATE — change this single line if the date/time changes.
+// WEDDING DATE — change this single line when the date is confirmed.
 // Format: "YYYY-MM-DDTHH:MM:SS" using 24-hour time.
-// Friday, 11 December 2026, 12:00 PM — the Anand Karaj.
+// Currently set to a temporary placeholder: 12 December 2026, 12:00 PM.
 // ============================================================
 const weddingDate =
-  new Date("2026-12-11T12:00:00");
+  new Date("2026-12-12T12:00:00");
 
 const countdownElements = {
   days: document.getElementById("days"),

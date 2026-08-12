@@ -747,98 +747,6 @@ footer {
   color: var(--gold-light);
 }
 
-/* 3D opening card: the cover (.intro-cover) is hinged on its left edge
-   and rotates open in perspective to reveal the panel sitting behind it,
-   like an invitation card being opened by hand. */
-
-.intro-card {
-  height: min(74vh, 580px);
-  margin: 0 auto;
-  max-width: min(92vw, 480px);
-  perspective: 2000px;
-  position: relative;
-  width: 100%;
-}
-
-.intro-panel {
-  align-items: center;
-  background:
-    radial-gradient(
-      circle at 50% 28%,
-      rgba(241, 202, 134, 0.2),
-      transparent 55%
-    ),
-    linear-gradient(
-      160deg,
-      #5c4636,
-      #362720
-    );
-  border: 1px solid rgba(244, 216, 163, 0.25);
-  border-radius: 12px;
-  box-shadow:
-    inset 0 0 70px rgba(0, 0, 0, 0.35),
-    0 30px 80px rgba(20, 12, 8, 0.5);
-  color: #fff8eb;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  inset: 0;
-  justify-content: center;
-  padding: 40px 30px;
-  position: absolute;
-  text-align: center;
-}
-
-.intro-panel .eyebrow {
-  color: var(--gold-light);
-}
-
-.intro-panel-message {
-  font-family: "Cormorant Garamond", serif;
-  font-size: clamp(1.4rem, 4vw, 1.9rem);
-  line-height: 1.55;
-  margin-top: 8px;
-}
-
-.intro-cover {
-  backface-visibility: hidden;
-  position: absolute;
-  background:
-    radial-gradient(
-      circle at center,
-      rgba(241, 202, 134, 0.24),
-      transparent 45%
-    ),
-    linear-gradient(
-      160deg,
-      #4c382f,
-      #6a5344 55%,
-      #3a2a22
-    );
-  border: 1px solid rgba(244, 216, 163, 0.3);
-  border-radius: 12px;
-  box-shadow: 0 30px 90px rgba(15, 9, 6, 0.55);
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  inset: 0;
-  justify-content: center;
-  max-width: none;
-  padding: 24px;
-  transform: rotateY(0deg);
-  transform-origin: left center;
-  transform-style: preserve-3d;
-  transition:
-    transform 1.3s cubic-bezier(0.65, 0, 0.35, 1),
-    box-shadow 1.3s ease;
-  z-index: 2;
-}
-
-.intro-card.opened .intro-cover {
-  box-shadow: 14px 0 60px rgba(0, 0, 0, 0.6);
-  transform: rotateY(-112deg);
-}
-
 .intro-title {
   color: #fff8eb;
   font-family: "Cormorant Garamond", serif;
@@ -858,7 +766,6 @@ footer {
 .seal-button {
   display: inline-flex;
   padding: 0;
-  perspective: 700px;
 }
 
 .seal-ring {
@@ -879,46 +786,7 @@ footer {
   display: flex;
   height: 132px;
   justify-content: center;
-  position: relative;
-  transform-style: preserve-3d;
   width: 132px;
-}
-
-/* Metallic sheen: a soft highlight offset toward the upper-left so the
-   gold reads as a curved, polished surface rather than a flat circle.
-   overlay keeps the seal symbol legible underneath instead of washing
-   it out. */
-.seal-ring::before {
-  background:
-    radial-gradient(
-      circle at 32% 26%,
-      rgba(255, 250, 230, 0.8),
-      transparent 55%
-    );
-  border-radius: 50%;
-  content: "";
-  inset: 0;
-  mix-blend-mode: overlay;
-  pointer-events: none;
-  position: absolute;
-  z-index: 1;
-}
-
-/* A darker disc set behind the face gives the seal coin-like thickness
-   as it tilts in 3D, instead of reading as a flat gold circle. */
-.seal-ring::after {
-  background:
-    linear-gradient(
-      135deg,
-      var(--gold-dark),
-      #6b4718
-    );
-  border-radius: 50%;
-  content: "";
-  inset: 0;
-  position: absolute;
-  transform: translateZ(-10px);
-  z-index: -1;
 }
 
 .seal-inner-ring {
@@ -942,13 +810,13 @@ footer {
   100% {
     filter:
       drop-shadow(0 18px 30px rgba(28, 16, 10, 0.3));
-    transform: translateY(0) rotateY(0deg) rotateX(0deg);
+    transform: translateY(0);
   }
 
   50% {
     filter:
       drop-shadow(0 28px 45px rgba(238, 194, 112, 0.38));
-    transform: translateY(-10px) rotateY(11deg) rotateX(4deg);
+    transform: translateY(-10px);
   }
 }
 
@@ -1195,10 +1063,7 @@ footer {
 }
 
 /* Separate layer so a slow Ken Burns zoom can animate the photo without
-   moving the hero text/nav sitting on top of it. --bg-x/--bg-y are the
-   parallax offset (mouse + scroll), written live by script.js and read
-   inside the keyframe below so the two animations don't fight over the
-   same transform. */
+   moving the hero text/nav sitting on top of it. */
 .hero-bg {
   animation: heroZoom 26s ease-in-out infinite alternate;
   background:
@@ -1214,11 +1079,11 @@ footer {
 
 @keyframes heroZoom {
   from {
-    transform: scale(1) translate3d(var(--bg-x, 0), var(--bg-y, 0), 0);
+    transform: scale(1);
   }
 
   to {
-    transform: scale(1.07) translate3d(var(--bg-x, 0), var(--bg-y, 0), 0);
+    transform: scale(1.07);
   }
 }
 
@@ -1271,12 +1136,12 @@ footer {
 @keyframes heroLightMove {
   from {
     opacity: 0.5;
-    transform: translateX(-4%) scale(1) translate3d(var(--light-x, 0), var(--light-y, 0), 0);
+    transform: translateX(-4%) scale(1);
   }
 
   to {
     opacity: 0.95;
-    transform: translateX(5%) scale(1.12) translate3d(var(--light-x, 0), var(--light-y, 0), 0);
+    transform: translateX(5%) scale(1.12);
   }
 }
 
@@ -1286,23 +1151,14 @@ footer {
   padding: 28px;
   position: relative;
   text-align: center;
-  z-index: 3;
-}
-
-/* .hero-content also carries .reveal for its entrance fade, and
-   .reveal.visible's own transform (translateY/scale, 2 classes) would
-   otherwise outrank a plain .hero-content transform (1 class). The
-   3-class selector below wins on specificity so the parallax offset
-   keeps applying once revealed, riding on .reveal's existing transition
-   rather than declaring a competing one (so opacity/filter keep fading
-   in together with it). */
-.hero-content.reveal.visible {
   transform:
     translate3d(
       var(--hero-x, 0),
       var(--hero-y, 0),
       0
     );
+  transition: transform 0.2s ease-out;
+  z-index: 3;
 }
 
 .hero-stars {
@@ -1312,7 +1168,6 @@ footer {
   position: absolute;
   top: -65px;
   transform: translateX(-50%);
-  transition: transform 0.2s ease-out;
   width: 360px;
 }
 
@@ -1688,158 +1543,6 @@ footer {
 
 .magnetic-button {
   transition: transform 0.2s ease-out;
-}
-
-/* ---------------------------------------------------------- */
-/* Family invitation                                            */
-/* ---------------------------------------------------------- */
-
-.invitation-section {
-  background:
-    linear-gradient(
-      180deg,
-      var(--deep-brown),
-      var(--ivory) 40%
-    );
-
-  display: flex;
-  justify-content: center;
-  padding-top: clamp(60px, 8vw, 100px);
-}
-
-.invitation-card {
-  background:
-    linear-gradient(
-      165deg,
-      var(--cream),
-      var(--ivory)
-    );
-
-  border: 1px solid rgba(196, 151, 79, 0.4);
-  border-radius: 4px;
-  box-shadow: var(--strong-shadow);
-  max-width: 620px;
-  padding: clamp(40px, 7vw, 76px) clamp(28px, 6vw, 64px);
-  position: relative;
-  text-align: center;
-  width: 100%;
-}
-
-/* Understated picture-frame corners rather than a busy floral motif. */
-.invitation-corner {
-  border-color: var(--gold);
-  border-style: solid;
-  border-width: 0;
-  height: 26px;
-  position: absolute;
-  width: 26px;
-}
-
-.invitation-corner-tl {
-  border-left-width: 2px;
-  border-top-width: 2px;
-  left: 14px;
-  top: 14px;
-}
-
-.invitation-corner-tr {
-  border-right-width: 2px;
-  border-top-width: 2px;
-  right: 14px;
-  top: 14px;
-}
-
-.invitation-corner-bl {
-  border-bottom-width: 2px;
-  border-left-width: 2px;
-  bottom: 14px;
-  left: 14px;
-}
-
-.invitation-corner-br {
-  border-bottom-width: 2px;
-  border-right-width: 2px;
-  bottom: 14px;
-  right: 14px;
-}
-
-.invitation-ornament {
-  color: var(--gold);
-  font-size: 1.9rem;
-  margin-bottom: 18px;
-}
-
-.invitation-card .eyebrow {
-  color: var(--gold-dark);
-}
-
-.invitation-party {
-  margin: 22px 0;
-}
-
-.invitation-name {
-  color: var(--mocha-dark);
-  font-family: "Cormorant Garamond", serif;
-  font-size: clamp(1.7rem, 4vw, 2.3rem);
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  margin: 0 0 8px;
-}
-
-.invitation-parents {
-  color: var(--brown-soft);
-  font-size: 0.98rem;
-  line-height: 1.6;
-  margin: 0;
-}
-
-.invitation-with {
-  align-items: center;
-  display: flex;
-  gap: 14px;
-  justify-content: center;
-  margin: 4px auto;
-  max-width: 220px;
-}
-
-.invitation-with span {
-  background:
-    linear-gradient(
-      90deg,
-      transparent,
-      var(--gold),
-      transparent
-    );
-
-  height: 1px;
-  width: 60px;
-}
-
-.invitation-with em {
-  color: var(--gold-dark);
-  font-size: 0.75rem;
-  font-style: normal;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-}
-
-.invitation-message {
-  color: var(--mocha);
-  font-family: "Cormorant Garamond", serif;
-  font-size: clamp(1.15rem, 2.6vw, 1.4rem);
-  font-style: italic;
-  line-height: 1.7;
-  margin: 26px auto 0;
-  max-width: 420px;
-}
-
-.invitation-date {
-  color: var(--gold-dark);
-  font-size: 0.95rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  margin: 0;
-  text-transform: uppercase;
 }
 
 /* ---------------------------------------------------------- */
@@ -2292,16 +1995,8 @@ footer {
   line-height: 1;
   position: absolute;
   top: 0;
-  transition:
-    filter 0.6s cubic-bezier(0.45, 0, 0.55, 1),
-    transform 0.6s cubic-bezier(0.45, 0, 0.55, 1);
+  transition: transform 0.6s cubic-bezier(0.45, 0, 0.55, 1);
   width: 100%;
-}
-
-/* Dims slightly while turning, as if catching less light edge-on —
-   a physical card flip cue rather than a flat digit swap. */
-.flip-card.flip-active .flip-face {
-  filter: brightness(0.85);
 }
 
 .flip-face-front {
@@ -2385,26 +2080,6 @@ footer {
 .event-card:hover {
   box-shadow:
     0 32px 72px rgba(62, 39, 28, 0.25);
-}
-
-/* Touch devices never fire the pointer-tracked tilt in script.js
-   (addTiltEffect is gated to fine pointers), so give them a simple
-   press/lift instead — a light 3D dip on tap rather than no feedback
-   at all. Cards also carry .reveal-rotate/.reveal-scale etc., whose
-   own .visible transform ties with a plain .event-card:active on
-   specificity (0,2,0 each) and, being declared later, would silently
-   win; .event-card.tilt-card:active (0,3,0) always outranks it. */
-@media (hover: none) and (pointer: coarse) {
-  .event-card {
-    transition:
-      transform 0.2s ease,
-      box-shadow 0.3s ease;
-  }
-
-  .event-card.tilt-card:active {
-    box-shadow: 0 14px 34px rgba(62, 39, 28, 0.3);
-    transform: perspective(950px) rotateX(2deg) translateY(-4px) scale(0.98);
-  }
 }
 
 /* Golden shine sweeping across the whole card on hover. */
@@ -2620,154 +2295,6 @@ footer {
   padding-top: 17px;
 }
 
-/* Day-grouped timeline: each day is a labelled stop on a gold vertical
-   line, with its own row of event cards underneath. Replaces the old
-   fixed three-card grid now that guests can see a different number of
-   events depending on access level. */
-
-.events-timeline {
-  margin: 0 auto;
-  max-width: 1180px;
-}
-
-.event-day-group {
-  margin-bottom: 60px;
-  padding-left: 30px;
-  position: relative;
-}
-
-/* The connecting line runs from one day's marker down to the next. */
-.event-day-group::before {
-  background: linear-gradient(180deg, var(--gold), rgba(196, 151, 79, 0.15));
-  bottom: -60px;
-  content: "";
-  left: 5px;
-  position: absolute;
-  top: 6px;
-  width: 2px;
-}
-
-.event-day-group--last::before {
-  content: none;
-}
-
-.event-day-heading {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  margin: 0 0 30px;
-  position: relative;
-}
-
-/* Positioned relative to .event-day-heading (not .event-day-group)
-   so it can center on the heading's own row regardless of how tall
-   the date text renders; left:-30px pulls it back out of the
-   heading's inherited padding-left into the gutter where the
-   connecting line sits. */
-.event-day-marker {
-  background: radial-gradient(circle, var(--gold-light), var(--gold));
-  border-radius: 50%;
-  box-shadow: 0 0 0 5px rgba(244, 216, 163, 0.35);
-  height: 12px;
-  left: -30px;
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 12px;
-}
-
-.event-day-date {
-  color: var(--mocha-dark);
-  font-family: "Cormorant Garamond", serif;
-  font-size: clamp(1.3rem, 3vw, 1.7rem);
-  font-weight: 600;
-}
-
-.event-day-label {
-  background: linear-gradient(135deg, var(--gold-light), var(--gold));
-  border-radius: 999px;
-  color: #4a2f16;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  padding: 5px 14px;
-  text-transform: uppercase;
-}
-
-.event-timeline-grid {
-  display: grid;
-  gap: 26px;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 340px));
-  justify-content: center;
-  perspective: 1300px;
-}
-
-.event-timeline-grid--single {
-  grid-template-columns: minmax(0, 520px);
-}
-
-/* Sukhmani Sahib Path has no photo, so it needs top padding in place
-   of the space a .event-photo would normally push .event-body down by. */
-.event-card--icon-only {
-  padding-top: 44px;
-}
-
-.event-card--big-day h3 {
-  font-size: clamp(2.2rem, 4vw, 2.8rem);
-}
-
-.event-schedule {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  list-style: none;
-  margin: 18px 0;
-  padding: 0;
-}
-
-.event-schedule li {
-  align-items: baseline;
-  border-bottom: 1px dashed rgba(166, 116, 57, 0.3);
-  display: flex;
-  gap: 12px;
-  justify-content: space-between;
-  padding-bottom: 8px;
-}
-
-.event-schedule li:last-child {
-  border-bottom: 0;
-}
-
-.event-schedule span {
-  color: var(--deep-brown);
-  font-family: "Cormorant Garamond", serif;
-  font-size: 1.15rem;
-  text-align: left;
-}
-
-.event-schedule time {
-  color: var(--gold-dark);
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-}
-
-@media (max-width: 560px) {
-  .event-day-group {
-    padding-left: 24px;
-  }
-
-  .event-day-marker {
-    left: -24px;
-  }
-
-  .event-timeline-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
 /* ---------------------------------------------------------- */
 /* Venue                                                        */
 /* ---------------------------------------------------------- */
@@ -2786,37 +2313,23 @@ footer {
 }
 
 .venue-image {
-  min-height: 400px;
-  overflow: hidden;
-  position: relative;
-}
-
-/* The photo lives on its own layer (separate from .venue-image itself)
-   so the push-in can animate transform:scale() — compositor-friendly,
-   unlike background-size, which doesn't interpolate at all here once a
-   real photo (not just a gradient) is one of the background layers —
-   and so scaling the photo never scales the overlay/label sitting on
-   top of it. */
-.venue-image-photo {
   background:
-    url("assets/Venue.jpg")
-    center / cover no-repeat,
+    url("assets/venue.jpg")
+    center / 105% no-repeat,
     linear-gradient(
       135deg,
       var(--soft-mocha),
       var(--mocha-dark)
     );
 
-  inset: 0;
-  position: absolute;
-  transform: scale(1.05);
-  transform-origin: center;
-  transition: transform 8s ease;
-  will-change: transform;
+  min-height: 400px;
+  overflow: hidden;
+  position: relative;
+  transition: background-size 8s ease;
 }
 
-.venue-image.visible .venue-image-photo {
-  transform: scale(1.16);
+.venue-image.visible {
+  background-size: 116%;
 }
 
 .venue-image.media-missing::before {
@@ -3071,7 +2584,7 @@ footer {
       rgba(87, 62, 50, 0.58),
       rgba(87, 62, 50, 0.58)
     ),
-    url("assets/Venue.jpg")
+    url("assets/venue.jpg")
     center / cover fixed,
     linear-gradient(
       135deg,
@@ -3368,7 +2881,6 @@ footer span {
 .petal-container {
   inset: 0;
   overflow: hidden;
-  perspective: 900px;
   pointer-events: none;
   position: fixed;
   z-index: 5;
@@ -3394,58 +2906,37 @@ footer span {
   top: -35px;
 }
 
-/* Depth tiers: far petals sit behind the mid layer, near petals sit in
-   front, so a near petal falling past a far one reads as closer rather
-   than just "bigger". */
-.floating-petal.petal-far {
-  z-index: 1;
-}
-
-.floating-petal.petal-mid {
-  z-index: 2;
-}
-
-.floating-petal.petal-near {
-  z-index: 3;
-}
-
-/* Each petal gets its own drift/rotation curve and depth-tier opacity
-   (set inline as CSS custom properties in script.js) so falling paths
-   never look identical. The rotateY term adds a gentle 3D tumble as
-   they fall instead of a flat Z-axis spin. */
+/* Each petal gets its own drift/rotation curve (set inline as CSS custom
+   properties in script.js) so falling paths never look identical. */
 @keyframes petalFall {
   0% {
     opacity: 0;
     transform:
       translate3d(0, -30px, 0)
-      rotate(0)
-      rotateY(0deg);
+      rotate(0);
   }
 
   10% {
-    opacity: var(--petal-opacity, 0.78);
+    opacity: 0.78;
   }
 
   35% {
     transform:
       translate3d(var(--drift-a, 30px), 32vh, 0)
-      rotate(var(--rotate-a, 140deg))
-      rotateY(calc(var(--tumble, 0deg) * 0.4));
+      rotate(var(--rotate-a, 140deg));
   }
 
   65% {
     transform:
       translate3d(var(--drift-b, 55px), 68vh, 0)
-      rotate(var(--rotate-b, 300deg))
-      rotateY(calc(var(--tumble, 0deg) * 0.75));
+      rotate(var(--rotate-b, 300deg));
   }
 
   100% {
     opacity: 0;
     transform:
       translate3d(var(--drift-c, -35px), 105vh, 0)
-      rotate(var(--rotate-c, 520deg))
-      rotateY(var(--tumble, 0deg));
+      rotate(var(--rotate-c, 520deg));
   }
 }
 
@@ -3532,21 +3023,11 @@ footer span {
 
 /* Better reveal */
 
-/* Each variant below folds a perspective(...) transform function into
-   its own "from" and "to" states — a self-contained 3D viewing distance
-   that doesn't require a `perspective` property on any ancestor, so
-   none of these needed a parent container touched. Durations/easing
-   match what each variant already used; only the transform functions
-   gained genuine depth (rotateX/rotateY/translateZ) instead of flat 2D
-   motion. */
-
 .reveal {
   filter: blur(7px);
   opacity: 0;
   transform:
-    perspective(1000px)
     translateY(45px)
-    rotateX(-10deg)
     scale(0.98);
   transition:
     opacity 1.05s ease,
@@ -3559,9 +3040,7 @@ footer span {
   filter: blur(0);
   opacity: 1;
   transform:
-    perspective(1000px)
     translateY(0)
-    rotateX(0deg)
     scale(1);
 }
 
@@ -3573,10 +3052,7 @@ footer span {
 .reveal-left {
   filter: blur(6px);
   opacity: 0;
-  transform:
-    perspective(1000px)
-    translateX(-70px)
-    rotateY(14deg);
+  transform: translateX(-70px);
   transition:
     opacity 1s ease,
     transform 1s cubic-bezier(0.16, 1, 0.3, 1),
@@ -3586,19 +3062,13 @@ footer span {
 .reveal-left.visible {
   filter: blur(0);
   opacity: 1;
-  transform:
-    perspective(1000px)
-    translateX(0)
-    rotateY(0deg);
+  transform: translateX(0);
 }
 
 .reveal-right {
   filter: blur(6px);
   opacity: 0;
-  transform:
-    perspective(1000px)
-    translateX(70px)
-    rotateY(-14deg);
+  transform: translateX(70px);
   transition:
     opacity 1s ease,
     transform 1s cubic-bezier(0.16, 1, 0.3, 1),
@@ -3608,22 +3078,12 @@ footer span {
 .reveal-right.visible {
   filter: blur(0);
   opacity: 1;
-  transform:
-    perspective(1000px)
-    translateX(0)
-    rotateY(0deg);
+  transform: translateX(0);
 }
 
-/* "Scale from background": starts pushed back in depth (translateZ)
-   and slightly tilted, as if drifting forward out of the page rather
-   than just growing in place. */
 .reveal-scale {
   opacity: 0;
-  transform:
-    perspective(1200px)
-    translateZ(-140px)
-    rotateX(5deg)
-    scale(0.85);
+  transform: scale(0.8);
   transition:
     opacity 0.9s ease,
     transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -3631,19 +3091,12 @@ footer span {
 
 .reveal-scale.visible {
   opacity: 1;
-  transform:
-    perspective(1200px)
-    translateZ(0)
-    rotateX(0deg)
-    scale(1);
+  transform: scale(1);
 }
 
 .reveal-rotate {
   opacity: 0;
-  transform:
-    perspective(1000px)
-    translateY(35px)
-    rotateX(-22deg);
+  transform: translateY(35px) rotate(-5deg);
   transition:
     opacity 0.95s ease,
     transform 0.95s cubic-bezier(0.16, 1, 0.3, 1);
@@ -3651,29 +3104,20 @@ footer span {
 
 .reveal-rotate.visible {
   opacity: 1;
-  transform:
-    perspective(1000px)
-    translateY(0)
-    rotateX(0deg);
+  transform: translateY(0) rotate(0deg);
 }
 
-/* "Depth fade": blur reads as the element racking into focus; pairing
-   it with a small scale-down-then-settle sells the same idea as the
-   other variants' translateZ without fighting reveal-scale for it. */
 .reveal-blur {
   filter: blur(16px);
   opacity: 0;
-  transform: scale(1.06);
   transition:
     opacity 1.2s ease,
-    filter 1.2s ease,
-    transform 1.2s ease;
+    filter 1.2s ease;
 }
 
 .reveal-blur.visible {
   filter: blur(0);
   opacity: 1;
-  transform: scale(1);
 }
 
 /* ---------------------------------------------------------- */
@@ -3893,17 +3337,12 @@ footer span {
     grid-template-columns: 1fr;
   }
 
-  /* The camera push-in stays desktop-only, matching this section's
-     pre-existing mobile behaviour (both states already resolved to the
-     same flat "cover" fit here before the photo moved to its own
-     scaling layer). */
-  .venue-image-photo {
-    transform: scale(1);
-    transition: none;
+  .venue-image {
+    background-size: cover;
   }
 
-  .venue-image.visible .venue-image-photo {
-    transform: scale(1);
+  .venue-image.visible {
+    background-size: cover;
   }
 }
 

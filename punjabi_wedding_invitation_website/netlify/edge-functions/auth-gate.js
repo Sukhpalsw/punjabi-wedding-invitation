@@ -1,26 +1,47 @@
 // ============================================================
-// SHARED-PASSWORD GATE (Netlify Edge Function)
+// TWO-TIER GUEST GATE (Netlify Edge Function)
 // ============================================================
 //
 // Sits in front of every request to the site (see netlify.toml,
 // path = "/*"). Nothing — HTML, CSS, JS, images, music — is served
-// until a visitor has the correct password.
+// until a visitor has entered one of two valid passwords.
 //
-// The real password is never stored here. It is read at request
-// time from the PROTECTED_PAGE_PASSWORD environment variable,
-// which must be set in the Netlify dashboard (Site settings ->
-// Environment variables) or via `netlify env:set`.
+// Both passwords are read at request time from environment
+// variables (never stored here, never sent to the browser):
+//   NORMAL_GUEST_PASSWORD  -> access level "normal"
+//   SPECIAL_GUEST_PASSWORD -> access level "special"
+// Set both in the Netlify dashboard (Site settings -> Environment
+// variables) or via `netlify env:set`. If either is missing, the
+// whole site fails closed (503) rather than falling back to an
+// unprotected or partially-protected state.
+//
+// The one password field on screen doesn't say which tier it
+// belongs to — whichever of the two it matches decides the guest's
+// access level. That level is the only thing stored in the session
+// cookie (as a signed role, not the password), and it's what
+// decides, on every later request, whether special-only event
+// markup gets stripped out of the HTML before it reaches the
+// browser (see stripSpecialOnlyContent below) — normal guests never
+// receive that markup at all, not even hidden via CSS.
 //
 // Flow, all on the one public URL (no separate /login path):
-//   - GET  with a valid session cookie      -> pass through to the real site
+//   - GET  with a valid session cookie      -> pass through, tailored to role
 //   - GET  without a valid session cookie   -> serve the password screen (401)
-//   - POST (password form submit)           -> verify, set cookie, redirect to "/"
+//   - POST (password form submit)           -> verify against both passwords,
+//                                               set role cookie, redirect to "/"
 //   - GET  "/?logout=1"                     -> clear cookie, redirect to "/"
 //
 // ------------------------------------------------------------
 
 const SESSION_COOKIE_NAME = "wedding_session";
 const SESSION_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours, per the brief
+
+const ROLE_NORMAL = "normal";
+const ROLE_SPECIAL = "special";
+const VALID_ROLES = new Set([ROLE_NORMAL, ROLE_SPECIAL]);
+
+const SPECIAL_ONLY_START = "<!--SPECIAL_ONLY_START-->";
+const SPECIAL_ONLY_END = "<!--SPECIAL_ONLY_END-->";
 
 const encoder = new TextEncoder();
 
@@ -80,6 +101,28 @@ async function verifyPassword(submittedPassword, realPassword) {
   return constantTimeEqual(submittedHash, realHash);
 }
 
+// Checks the submitted password against BOTH guest passwords (always
+// both, never short-circuiting on the first match) and returns the
+// matching role, or null. Never returns which password was wrong, or
+// even whether a *password* was wrong vs. simply not matching either
+// tier — the caller only ever sees "role" or "no role".
+async function resolveRole(submittedPassword, normalPassword, specialPassword) {
+  const [matchesNormal, matchesSpecial] = await Promise.all([
+    verifyPassword(submittedPassword, normalPassword),
+    verifyPassword(submittedPassword, specialPassword)
+  ]);
+
+  if (matchesSpecial) {
+    return ROLE_SPECIAL;
+  }
+
+  if (matchesNormal) {
+    return ROLE_NORMAL;
+  }
+
+  return null;
+}
+
 async function getHmacKey(secret) {
   return crypto.subtle.importKey(
     "raw",
@@ -90,43 +133,62 @@ async function getHmacKey(secret) {
   );
 }
 
-// Stateless session token: "<expiryTimestamp>.<hmacSignatureHex>".
-// Signed with a key derived from the site password via Web Crypto,
-// so rotating the password automatically invalidates old sessions.
-async function createSessionToken(secret, expiresAt) {
-  const key = await getHmacKey(secret);
-  const message = String(expiresAt);
+// Stateless session token: "<role>.<expiryTimestamp>.<hmacSignatureHex>".
+// Signed with a key derived from BOTH guest passwords via Web Crypto,
+// so rotating *either* password automatically invalidates every
+// existing session — the cookie carries the authenticated role only,
+// never a password.
+async function createSessionToken(signingSecret, role, expiresAt) {
+  const key = await getHmacKey(signingSecret);
+  const message = `${role}.${expiresAt}`;
   const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(message));
   return `${message}.${bufferToHex(signature)}`;
 }
 
-async function verifySessionToken(token, secret) {
+// Returns the authenticated role ("normal" | "special") if the token
+// is well-formed, correctly signed, not expired, and carries a role
+// from the known whitelist — otherwise null. A tampered role (e.g. a
+// visitor hand-editing "normal" to "special" in their cookie) changes
+// the signed message, so it fails the signature check here rather
+// than ever being trusted.
+async function verifySessionToken(token, signingSecret) {
   if (!token) {
-    return false;
+    return null;
   }
 
-  const separatorIndex = token.lastIndexOf(".");
-  if (separatorIndex === -1) {
-    return false;
+  const parts = token.split(".");
+  if (parts.length !== 3) {
+    return null;
   }
 
-  const message = token.slice(0, separatorIndex);
-  const signatureHex = token.slice(separatorIndex + 1);
+  const [role, expiresAtRaw, signatureHex] = parts;
 
-  const expiresAt = Number(message);
+  if (!VALID_ROLES.has(role)) {
+    return null;
+  }
+
+  const expiresAt = Number(expiresAtRaw);
   if (!Number.isFinite(expiresAt) || Date.now() > expiresAt) {
-    return false;
+    return null;
   }
 
   const signatureBytes = hexToBytes(signatureHex);
   if (!signatureBytes) {
-    return false;
+    return null;
   }
 
-  const key = await getHmacKey(secret);
+  const key = await getHmacKey(signingSecret);
+  const message = `${role}.${expiresAtRaw}`;
 
   // crypto.subtle.verify performs a constant-time comparison internally.
-  return crypto.subtle.verify("HMAC", key, signatureBytes, encoder.encode(message));
+  const isValidSignature = await crypto.subtle.verify(
+    "HMAC",
+    key,
+    signatureBytes,
+    encoder.encode(message)
+  );
+
+  return isValidSignature ? role : null;
 }
 
 // ------------------------------------------------------------
@@ -347,7 +409,7 @@ function renderLoginPage(errorMessage) {
     <div class="seal" aria-hidden="true">ੴ</div>
     <p class="eyebrow">You are warmly invited</p>
     <h1>This Invitation Is Private</h1>
-    <p class="note">Please enter the shared password to open it.</p>
+    <p class="note">Please enter your invitation password to open it.</p>
     ${errorMessage ? `<p class="error">${errorMessage}</p>` : ""}
     <form method="POST" action="/">
       <label for="password" class="visually-hidden" style="position:absolute;left:-9999px;">Password</label>
@@ -412,23 +474,49 @@ function htmlResponse(body, status) {
   });
 }
 
+// Removes every <!--SPECIAL_ONLY_START--> ... <!--SPECIAL_ONLY_END-->
+// block (and its contents) from the HTML. Used for normal-guest
+// responses so special-only event markup is never present in the
+// document at all — not sent hidden-by-CSS, not present for a
+// visitor to find in "view source" or dev tools.
+function stripSpecialOnlyContent(html) {
+  const pattern = new RegExp(
+    `${SPECIAL_ONLY_START}[\\s\\S]*?${SPECIAL_ONLY_END}`,
+    "g"
+  );
+  return html.replace(pattern, "");
+}
+
+// The markers themselves are only meaningful to this function — a
+// special guest sees everything, so just remove the comment tags and
+// leave their contents in place.
+function unwrapSpecialOnlyMarkers(html) {
+  return html.split(SPECIAL_ONLY_START).join("").split(SPECIAL_ONLY_END).join("");
+}
+
 // ------------------------------------------------------------
 // Handler
 // ------------------------------------------------------------
 
 export default async (request, context) => {
-  const sitePassword = Deno.env.get("PROTECTED_PAGE_PASSWORD");
+  const normalPassword = Deno.env.get("NORMAL_GUEST_PASSWORD");
+  const specialPassword = Deno.env.get("SPECIAL_GUEST_PASSWORD");
 
-  if (!sitePassword) {
-    // Fail closed: nobody gets in, including the owner, until the env
-    // var is set. The real reason is only visible to the site owner,
+  if (!normalPassword || !specialPassword) {
+    // Fail closed: nobody gets in, including the owner, until both env
+    // vars are set. The real reason is only visible to the site owner,
     // via the Netlify dashboard's Edge Function logs — never to visitors.
     console.error(
-      "[auth-gate] PROTECTED_PAGE_PASSWORD is not set. Set it in " +
-        "Site settings -> Environment variables, then redeploy."
+      "[auth-gate] NORMAL_GUEST_PASSWORD and/or SPECIAL_GUEST_PASSWORD is " +
+        "not set. Set both in Site settings -> Environment variables, " +
+        "then redeploy."
     );
     return htmlResponse(renderUnavailablePage(), 503);
   }
+
+  // Signing key is derived from both passwords together, so changing
+  // either one invalidates every previously-issued session.
+  const signingSecret = `${normalPassword}::${specialPassword}`;
 
   const url = new URL(request.url);
   const isHttps = url.protocol === "https:";
@@ -454,11 +542,12 @@ export default async (request, context) => {
       submittedPassword = "";
     }
 
-    const isCorrect =
-      submittedPassword.length > 0 &&
-      (await verifyPassword(submittedPassword, sitePassword));
+    const role =
+      submittedPassword.length > 0
+        ? await resolveRole(submittedPassword, normalPassword, specialPassword)
+        : null;
 
-    if (!isCorrect) {
+    if (!role) {
       return htmlResponse(
         renderLoginPage("Incorrect password. Please try again."),
         401
@@ -466,7 +555,7 @@ export default async (request, context) => {
     }
 
     const expiresAt = Date.now() + SESSION_DURATION_MS;
-    const token = await createSessionToken(sitePassword, expiresAt);
+    const token = await createSessionToken(signingSecret, role, expiresAt);
 
     const headers = new Headers({
       location: "/",
@@ -482,9 +571,9 @@ export default async (request, context) => {
 
   // ---- Normal navigation / asset request ----
   const sessionToken = getCookie(request, SESSION_COOKIE_NAME);
-  const isAuthenticated = await verifySessionToken(sessionToken, sitePassword);
+  const role = await verifySessionToken(sessionToken, signingSecret);
 
-  if (!isAuthenticated) {
+  if (!role) {
     return htmlResponse(renderLoginPage(), 401);
   }
 
@@ -495,12 +584,19 @@ export default async (request, context) => {
     return response;
   }
 
-  // Inject a small logout link into the real site's HTML at delivery
-  // time only — the source files on disk are never modified.
+  // Tailor the HTML to the authenticated role, and inject a small
+  // logout link — all at delivery time only. The source files on disk
+  // are never modified.
   const originalHtml = await response.text();
-  const injectedHtml = originalHtml.includes("</body>")
-    ? originalHtml.replace("</body>", `${LOGOUT_SNIPPET}</body>`)
-    : `${originalHtml}${LOGOUT_SNIPPET}`;
+
+  const roleTailoredHtml =
+    role === ROLE_NORMAL
+      ? stripSpecialOnlyContent(originalHtml)
+      : unwrapSpecialOnlyMarkers(originalHtml);
+
+  const injectedHtml = roleTailoredHtml.includes("</body>")
+    ? roleTailoredHtml.replace("</body>", `${LOGOUT_SNIPPET}</body>`)
+    : `${roleTailoredHtml}${LOGOUT_SNIPPET}`;
 
   const headers = new Headers(response.headers);
   headers.delete("content-length");
