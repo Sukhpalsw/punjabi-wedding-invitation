@@ -1538,8 +1538,17 @@ if (lightbox) {
 }
 
 // ------------------------------------------------------------
-// RSVP FORM (localStorage demo)
+// RSVP FORM (real Netlify Forms submission)
 // ------------------------------------------------------------
+//
+// Submits via fetch() to Netlify Forms — the same mechanism a native
+// form POST to "/" would use, just without the full-page reload, so
+// the existing success/error UI can stay in place. auth-gate.js (the
+// edge function in front of every request) recognises this submission
+// by its form-name field and, once it confirms the visitor is
+// authenticated, hands the request on untouched so Netlify's own
+// forms pipeline receives and stores it — see that file for the
+// server-side half of this.
 
 const rsvpForm =
   document.getElementById("rsvpForm");
@@ -1553,45 +1562,164 @@ const rsvpSuccess =
 const rsvpSuccessName =
   document.getElementById("rsvpSuccessName");
 
+const rsvpSuccessMessage =
+  document.getElementById("rsvpSuccessMessage");
+
+const guestsField =
+  document.getElementById("guestsField");
+
 if (rsvpForm) {
+  const guestsSelect =
+    rsvpForm.querySelector('select[name="guests"]');
+
+  const attendanceRadios = Array.from(
+    rsvpForm.querySelectorAll('input[name="attendance"]')
+  );
+
+  const submitButton =
+    rsvpForm.querySelector(".submit-button");
+
+  const submitButtonLabel =
+    submitButton
+      ? submitButton.querySelector(".submit-button-label")
+      : null;
+
+  // Guest count only makes sense for guests who are actually coming —
+  // hidden (and not required) until "Joyfully Accepts" is chosen, per
+  // the brief.
+  function updateGuestsFieldVisibility() {
+    const selected = attendanceRadios.find(
+      (radio) => radio.checked
+    );
+
+    const isAttending =
+      Boolean(selected) &&
+      selected.value === "Joyfully Accepts";
+
+    if (guestsField) {
+      guestsField.hidden = !isAttending;
+    }
+
+    if (guestsSelect) {
+      guestsSelect.required = isAttending;
+
+      if (!isAttending) {
+        guestsSelect.value = "";
+      }
+    }
+  }
+
+  attendanceRadios.forEach((radio) => {
+    radio.addEventListener(
+      "change",
+      updateGuestsFieldVisibility
+    );
+  });
+
+  updateGuestsFieldVisibility();
+
+  function setFormMessage(text, isError) {
+    if (!formMessage) {
+      return;
+    }
+
+    formMessage.textContent = text;
+    formMessage.classList.toggle("is-error", Boolean(isError));
+
+    // Errors interrupt (assertive); routine status updates ("Sending…")
+    // don't need to — role is switched per message rather than fixed,
+    // so a screen reader isn't interrupted needlessly on every submit.
+    formMessage.setAttribute(
+      "role",
+      isError ? "alert" : "status"
+    );
+  }
+
+  let isSubmittingRsvp = false;
+
+  function setSubmitting(submitting) {
+    isSubmittingRsvp = submitting;
+
+    if (submitButton) {
+      submitButton.disabled = submitting;
+      submitButton.setAttribute(
+        "aria-busy",
+        submitting ? "true" : "false"
+      );
+    }
+
+    if (submitButtonLabel) {
+      submitButtonLabel.textContent =
+        submitting ? "Sending…" : "Send RSVP";
+    }
+  }
+
   rsvpForm.addEventListener(
     "submit",
-    (event) => {
+    async (event) => {
       event.preventDefault();
+
+      // Belt-and-suspenders against a double submit: the disabled
+      // button already stops a second click from firing another submit
+      // event, this guards a stray keyboard Enter in the same window.
+      if (isSubmittingRsvp) {
+        return;
+      }
+
+      if (!rsvpForm.checkValidity()) {
+        rsvpForm.reportValidity();
+        return;
+      }
+
+      setSubmitting(true);
+      setFormMessage("", false);
 
       const formData = new FormData(rsvpForm);
 
-      const entry = {
-        name: formData.get("name"),
-        guests: formData.get("guests"),
-        attendance: formData.get("attendance"),
-        message: formData.get("message"),
-        submittedAt: new Date().toISOString()
-      };
+      // The authenticated role (never a password, never the session
+      // token) — injected server-side as a data attribute on <body>
+      // by auth-gate.js. Only added if actually present, so a request
+      // that somehow reaches this page without it just omits the field
+      // rather than submitting a misleading empty value.
+      const guestType = document.body.dataset.guestRole;
+
+      if (guestType) {
+        formData.set("guest_type", guestType);
+      }
+
+      const attendanceValue = formData.get("attendance");
+      const isAttending = attendanceValue === "Joyfully Accepts";
+      const guestName = String(formData.get("name") || "").trim();
 
       try {
-        const existing = JSON.parse(
-          window.localStorage.getItem("weddingRsvps") ||
-            "[]"
-        );
+        const response = await fetch("/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          body: new URLSearchParams(formData).toString()
+        });
 
-        existing.push(entry);
-
-        window.localStorage.setItem(
-          "weddingRsvps",
-          JSON.stringify(existing)
-        );
-
-        if (formMessage) {
-          formMessage.textContent = "";
+        if (!response.ok) {
+          throw new Error(
+            `RSVP submission failed with status ${response.status}`
+          );
         }
 
         // Swap the form for an elegant confirmation — this also stops
         // an accidental second click on Send RSVP, since the button
-        // is no longer on screen.
+        // is no longer on screen. Only ever reached after Netlify has
+        // actually confirmed the submission above.
         if (rsvpSuccess) {
-          if (rsvpSuccessName && entry.name) {
-            rsvpSuccessName.textContent = `, ${entry.name}!`;
+          if (rsvpSuccessName) {
+            rsvpSuccessName.textContent =
+              guestName ? `, ${guestName}!` : "!";
+          }
+
+          if (rsvpSuccessMessage) {
+            rsvpSuccessMessage.textContent = isAttending
+              ? "Thank you for your RSVP. We look forward to celebrating this special occasion with you."
+              : "Thank you for letting us know. Your blessings and good wishes mean a great deal to us.";
           }
 
           rsvpForm.hidden = true;
@@ -1604,18 +1732,19 @@ if (rsvpForm) {
             x: rect.left + rect.width / 2,
             y: rect.top + rect.height / 2
           });
-        } else if (formMessage) {
-          // Fallback if the success panel isn't present for some reason.
-          formMessage.textContent =
-            `Thank you, ${entry.name}! Your response has been saved on this device.`;
         }
 
         rsvpForm.reset();
+        updateGuestsFieldVisibility();
       } catch (error) {
-        if (formMessage) {
-          formMessage.textContent =
-            "Something went wrong saving your RSVP. Please try again.";
-        }
+        // The guest's entered information is left exactly as they typed
+        // it (no reset here) so retrying doesn't mean starting over.
+        setFormMessage(
+          "We couldn't send your RSVP just now. Please check your connection and try again.",
+          true
+        );
+      } finally {
+        setSubmitting(false);
       }
     }
   );

@@ -236,6 +236,8 @@ function buildSessionCookie(value, isHttps, maxAgeSeconds) {
   return parts.join("; ");
 }
 
+const RSVP_FORM_NAME = "wedding-rsvp";
+
 // ------------------------------------------------------------
 // HTML pages (self-contained — no external CSS/JS, so they render
 // even before any authentication has happened)
@@ -494,6 +496,21 @@ function unwrapSpecialOnlyMarkers(html) {
   return html.split(SPECIAL_ONLY_START).join("").split(SPECIAL_ONLY_END).join("");
 }
 
+// Exposes only the already-authenticated role (never a password, never
+// the session token) to client-side JS, via a plain data attribute —
+// so the RSVP form can tag its submission with guest_type without the
+// browser ever needing to read the HttpOnly session cookie (it can't;
+// that's the point of HttpOnly). This doesn't weaken authorization:
+// the role was already decided server-side before this point, and
+// which content a visitor received was already determined by it — this
+// only makes that same, already-non-secret decision readable by JS too.
+function injectGuestRole(html, role) {
+  return html.replace(
+    '<body class="locked">',
+    `<body class="locked" data-guest-role="${role}">`
+  );
+}
+
 // ------------------------------------------------------------
 // Handler
 // ------------------------------------------------------------
@@ -531,16 +548,46 @@ export default async (request, context) => {
     return new Response(null, { status: 303, headers });
   }
 
-  // ---- Login attempt ----
+  // ---- POST: either the RSVP form or the password-login form ----
+  // Both arrive as the same content-type, so read the body once (via a
+  // clone) to tell them apart. The clone is what gets consumed here —
+  // the original `request` is only read from below for the RSVP path,
+  // where its still-untouched body needs to reach context.next() (and,
+  // beyond it, Netlify's own Forms processing) intact.
   if (request.method === "POST") {
-    let submittedPassword = "";
+    let form = null;
 
     try {
-      const form = await request.formData();
-      submittedPassword = String(form.get("password") || "");
+      form = await request.clone().formData();
     } catch {
-      submittedPassword = "";
+      form = null;
     }
+
+    const formName = form ? String(form.get("form-name") || "") : "";
+
+    // ---- RSVP submission ----
+    // Netlify Forms is a platform-level feature that processes matching
+    // POST requests as part of the normal request pipeline — it isn't
+    // something this function calls directly. Passing the request on
+    // via context.next() (unread beyond the clone above, so its body is
+    // still intact) is what lets that pipeline see and store it. Only
+    // an authenticated guest ever reaches that point; anyone without a
+    // valid session gets the same login page as any other unauthenticated
+    // request, so this can't become a way to submit without ever having
+    // entered a real invitation password.
+    if (formName === RSVP_FORM_NAME) {
+      const sessionToken = getCookie(request, SESSION_COOKIE_NAME);
+      const role = await verifySessionToken(sessionToken, signingSecret);
+
+      if (!role) {
+        return htmlResponse(renderLoginPage(), 401);
+      }
+
+      return context.next();
+    }
+
+    // ---- Login attempt ----
+    const submittedPassword = form ? String(form.get("password") || "") : "";
 
     const role =
       submittedPassword.length > 0
@@ -589,10 +636,12 @@ export default async (request, context) => {
   // are never modified.
   const originalHtml = await response.text();
 
-  const roleTailoredHtml =
+  const roleTailoredHtml = injectGuestRole(
     role === ROLE_NORMAL
       ? stripSpecialOnlyContent(originalHtml)
-      : unwrapSpecialOnlyMarkers(originalHtml);
+      : unwrapSpecialOnlyMarkers(originalHtml),
+    role
+  );
 
   const injectedHtml = roleTailoredHtml.includes("</body>")
     ? roleTailoredHtml.replace("</body>", `${LOGOUT_SNIPPET}</body>`)

@@ -963,52 +963,70 @@
           </p>
         </div>
 
-        <form id="rsvpForm">
+        <form
+          id="rsvpForm"
+          name="wedding-rsvp"
+          method="POST"
+          action="/"
+          data-netlify="true"
+          data-netlify-honeypot="bot-field"
+        >
+          <input type="hidden" name="form-name" value="wedding-rsvp" />
+
+          <p class="visually-hidden" aria-hidden="true">
+            <label>
+              Leave this field blank
+              <input
+                type="text"
+                name="bot-field"
+                tabindex="-1"
+                autocomplete="off"
+              />
+            </label>
+          </p>
 
           <div class="form-row">
             <label>
-              Full name
+              Guest / family name
 
               <input
                 type="text"
                 name="name"
                 required
+                autocomplete="name"
                 placeholder="Your name"
               />
             </label>
 
             <label>
-              Number of guests
+              Phone number
+              <span class="label-optional">(optional)</span>
 
-              <select
-                name="guests"
-                required
-              >
-                <option value="">Choose</option>
-                <option value="1">1 Guest</option>
-                <option value="2">2 Guests</option>
-                <option value="3">3 Guests</option>
-                <option value="4">4 Guests</option>
-                <option value="5+">5+ Guests</option>
-              </select>
+              <input
+                type="tel"
+                name="phone"
+                inputmode="tel"
+                autocomplete="tel"
+                placeholder="Your phone number"
+              />
             </label>
           </div>
 
           <fieldset>
             <legend>
-              Will you attend?
+              Will you be joining us?
             </legend>
 
             <label class="radio-option">
               <input
                 type="radio"
                 name="attendance"
-                value="Joyfully attending"
+                value="Joyfully Accepts"
                 required
               />
 
               <span>
-                Joyfully attending
+                Joyfully Accepts
               </span>
             </label>
 
@@ -1016,18 +1034,32 @@
               <input
                 type="radio"
                 name="attendance"
-                value="Regretfully unable"
+                value="Regretfully Declines"
                 required
               />
 
               <span>
-                Regretfully unable
+                Regretfully Declines
               </span>
             </label>
           </fieldset>
 
+          <label id="guestsField" hidden>
+            Number of guests
+
+            <select name="guests">
+              <option value="">Choose</option>
+              <option value="1">1 Guest</option>
+              <option value="2">2 Guests</option>
+              <option value="3">3 Guests</option>
+              <option value="4">4 Guests</option>
+              <option value="5+">5+ Guests</option>
+            </select>
+          </label>
+
           <label>
-            Message for the couple
+            Message / blessing for the couple
+            <span class="label-optional">(optional)</span>
 
             <textarea
               name="message"
@@ -1040,7 +1072,7 @@
             class="primary-button submit-button magnetic-button"
             type="submit"
           >
-            Send RSVP
+            <span class="submit-button-label">Send RSVP</span>
             <span aria-hidden="true">→</span>
           </button>
 
@@ -1060,13 +1092,13 @@
         >
           <div class="rsvp-success-icon" aria-hidden="true">✦</div>
 
-          <h3>
+          <h3 id="rsvpSuccessHeading">
             Thank You<span id="rsvpSuccessName"></span>
           </h3>
 
-          <p>
-            Your response has been saved on this device.
-            This is a demo RSVP — nothing is sent online yet.
+          <p id="rsvpSuccessMessage">
+            Thank you for your RSVP. We look forward to
+            celebrating this special occasion with you.
           </p>
         </div>
       </div>

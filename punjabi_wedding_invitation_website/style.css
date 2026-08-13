@@ -19,6 +19,21 @@ html {
   scroll-padding-top: 90px;
 }
 
+/* Visually hides content while keeping it available to assistive tech
+   (unlike display:none/visibility:hidden, which remove it from both).
+   Used for the RSVP honeypot field's label — the field itself also
+   carries aria-hidden so screen-reader users never land on it either. */
+.visually-hidden {
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
 /* On-brand keyboard focus ring, sitewide. :focus-visible only shows for
    keyboard/assistive-tech navigation, never on a plain mouse click. */
 a:focus-visible,
@@ -3197,11 +3212,58 @@ legend {
   width: auto;
 }
 
+.label-optional {
+  color: var(--soft-mocha);
+  font-size: 0.78rem;
+  font-weight: 400;
+  text-transform: none;
+}
+
+/* The guest-count field is shown/required only once "Joyfully Accepts"
+   is chosen (toggled in script.js) — [hidden] already removes it from
+   layout and the tab order, this just gives the reveal a soft transition
+   for guests switching their answer back and forth. */
+#guestsField {
+  animation: guestsFieldIn 0.35s ease;
+}
+
+@keyframes guestsFieldIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .form-message {
   color: var(--gold-dark);
   font-size: 0.9rem;
   margin-top: 14px;
   min-height: 1.2em;
+}
+
+/* A real submission can fail (network/server), unlike the old
+   localStorage demo — this gives errors their own, more urgent color
+   so they don't read as just another status update. */
+.form-message.is-error {
+  color: #a23b2e;
+}
+
+.submit-button[aria-busy="true"] {
+  cursor: progress;
+  opacity: 0.75;
+}
+
+.submit-button:disabled {
+  cursor: not-allowed;
+}
+
+.submit-button:disabled:hover {
+  transform: none;
 }
 
 .rsvp-success {
