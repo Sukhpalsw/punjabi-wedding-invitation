@@ -1328,14 +1328,14 @@ if (venueImage) {
     venueImage.classList.add("visible");
   }
 
-  // venue.jpg is a CSS background, not an <img>, so it can't fire a
+  // Venue.jpg is a CSS background, not an <img>, so it can't fire a
   // native "error" event — probe it directly so a missing photo still
   // gets the same graceful placeholder treatment as everywhere else.
   const venuePhotoProbe = new Image();
   venuePhotoProbe.addEventListener("error", () => {
     venueImage.classList.add("media-missing");
   });
-  venuePhotoProbe.src = "assets/venue.jpg";
+  venuePhotoProbe.src = "assets/Venue.jpg";
 }
 
 // ------------------------------------------------------------

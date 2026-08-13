@@ -2494,6 +2494,11 @@ footer {
    shown whole on a soft matching backdrop instead of bleeding to the
    card edges like the other event photos. */
 
+/* Taller than the shared 240px base: these AI character illustrations
+   are tall/narrow portraits, so a 240px-high box would leave them
+   looking small and stranded in the middle of a lot of backdrop.
+   Every event card currently uses this contain variant, so raising
+   the height here doesn't affect any cover-cropped photo elsewhere. */
 .event-photo--contain {
   align-items: center;
   background:
@@ -2508,8 +2513,9 @@ footer {
       var(--warm-beige)
     );
   display: flex;
+  height: 320px;
   justify-content: center;
-  padding: 14px;
+  padding: 18px;
 }
 
 .event-photo--contain::after {
@@ -2705,12 +2711,6 @@ footer {
 
 .event-timeline-grid--single {
   grid-template-columns: minmax(0, 520px);
-}
-
-/* Sukhmani Sahib Path has no photo, so it needs top padding in place
-   of the space a .event-photo would normally push .event-body down by. */
-.event-card--icon-only {
-  padding-top: 44px;
 }
 
 .event-card--big-day h3 {
