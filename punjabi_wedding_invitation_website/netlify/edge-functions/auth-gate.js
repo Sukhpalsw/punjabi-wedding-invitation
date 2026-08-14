@@ -511,11 +511,29 @@ function injectGuestRole(html, role) {
   );
 }
 
+// This path = "/*" edge function sits in front of every request to the
+// site, including calls to Netlify Functions — so without this, Netlify
+// Forms' own "wedding-rsvp submitted" webhook call to the notification
+// function below would hit the password gate exactly like a visitor
+// would, and (having no session cookie or password field) get bounced
+// to the login page instead of ever reaching the function. This is a
+// server-to-server call from Netlify's own infrastructure, not a
+// visitor, so it's exempted from the guest password gate entirely —
+// every other path, including the RSVP form submission itself, still
+// goes through the full check below unchanged.
+const RSVP_NOTIFY_FUNCTION_PATH = "/.netlify/functions/rsvp-notify";
+
 // ------------------------------------------------------------
 // Handler
 // ------------------------------------------------------------
 
 export default async (request, context) => {
+  const url = new URL(request.url);
+
+  if (url.pathname === RSVP_NOTIFY_FUNCTION_PATH) {
+    return context.next();
+  }
+
   const normalPassword = Deno.env.get("NORMAL_GUEST_PASSWORD");
   const specialPassword = Deno.env.get("SPECIAL_GUEST_PASSWORD");
 
@@ -535,7 +553,6 @@ export default async (request, context) => {
   // either one invalidates every previously-issued session.
   const signingSecret = `${normalPassword}::${specialPassword}`;
 
-  const url = new URL(request.url);
   const isHttps = url.protocol === "https:";
 
   // ---- Logout ----
