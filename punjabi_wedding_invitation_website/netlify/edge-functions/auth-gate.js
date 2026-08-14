@@ -512,16 +512,37 @@ function injectGuestRole(html, role) {
 }
 
 // This path = "/*" edge function sits in front of every request to the
-// site, including calls to Netlify Functions — so without this, Netlify
-// Forms' own "wedding-rsvp submitted" webhook call to the notification
-// function below would hit the password gate exactly like a visitor
-// would, and (having no session cookie or password field) get bounced
-// to the login page instead of ever reaching the function. This is a
+// site, including calls to Netlify Functions — so without an exemption,
+// Netlify Forms' own "wedding-rsvp submitted" webhook call would hit
+// the password gate exactly like a visitor would, and (having no
+// session cookie or password field) get bounced to the login page
+// instead of ever reaching the notification function. That's a
 // server-to-server call from Netlify's own infrastructure, not a
-// visitor, so it's exempted from the guest password gate entirely —
-// every other path, including the RSVP form submission itself, still
-// goes through the full check below unchanged.
-const RSVP_NOTIFY_FUNCTION_PATH = "/.netlify/functions/rsvp-notify";
+// visitor, so it's exempted entirely.
+//
+// The private RSVP-details page (/rsvp/view/<token>, rewritten by
+// netlify.toml to /.netlify/functions/rsvp-view) is exempted for a
+// different reason: it's meant to be reachable straight from a tapped
+// phone notification, with no wedding-site session at all. That's
+// safe specifically because it does NOT serve any of the protected
+// wedding site — it's a wholly separate page that renders only the one
+// RSVP a valid, unguessable random token points to (see rsvp-view.js).
+// The token itself is that page's entire authorization; there is no
+// path through this exemption that reaches index.html or any other
+// guest's data. Every other path, including the RSVP form submission
+// itself, still goes through the full password check below unchanged.
+const GUEST_AUTH_EXEMPT_EXACT_PATHS = new Set([
+  "/.netlify/functions/rsvp-notify",
+  "/.netlify/functions/rsvp-view"
+]);
+const RSVP_VIEW_PATH_PREFIX = "/rsvp/view/";
+
+function isExemptFromGuestAuth(pathname) {
+  return (
+    GUEST_AUTH_EXEMPT_EXACT_PATHS.has(pathname) ||
+    pathname.startsWith(RSVP_VIEW_PATH_PREFIX)
+  );
+}
 
 // ------------------------------------------------------------
 // Handler
@@ -530,7 +551,7 @@ const RSVP_NOTIFY_FUNCTION_PATH = "/.netlify/functions/rsvp-notify";
 export default async (request, context) => {
   const url = new URL(request.url);
 
-  if (url.pathname === RSVP_NOTIFY_FUNCTION_PATH) {
+  if (isExemptFromGuestAuth(url.pathname)) {
     return context.next();
   }
 

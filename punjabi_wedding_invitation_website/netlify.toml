@@ -1,7 +1,20 @@
 # Netlify configuration for the wedding invitation site.
 # This does not change how/where the site is built or published —
-# it only adds the password-gate Edge Function in front of every request.
+# it only adds the password-gate Edge Function in front of every request,
+# plus one clean-URL rewrite for the private RSVP details page.
 
 [[edge_functions]]
   path = "/*"
   function = "auth-gate"
+
+# Clean, guest-facing URL for the private RSVP details page (linked from
+# the ntfy push notification) -> the function that actually renders it.
+# A rewrite (status 200), not a redirect, so the browser address bar
+# keeps showing the clean /rsvp/view/<token> URL. See the exemption for
+# both this path and the underlying function path in
+# netlify/edge-functions/auth-gate.js — without it, the guest password
+# gate would intercept this before it ever reached the rewrite.
+[[redirects]]
+  from = "/rsvp/view/:token"
+  to = "/.netlify/functions/rsvp-view?token=:token"
+  status = 200

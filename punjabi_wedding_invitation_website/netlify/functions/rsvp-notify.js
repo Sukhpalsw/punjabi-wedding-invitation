@@ -6,10 +6,15 @@
 // moment a verified wedding-rsvp submission is stored (see
 // netlify/edge-functions/auth-gate.js for how that submission reaches
 // Netlify Forms in the first place, and the README/report for the
-// exact dashboard steps). This function's only job is to turn that
-// webhook payload into one short, clean push notification on ntfy —
-// it does not touch the RSVP storage or the site's password gate,
-// and it never forwards the raw webhook JSON anywhere.
+// exact dashboard steps). This function:
+//   1. formats a short, clean push notification for ntfy (never the
+//      raw webhook JSON, never IP/user-agent/headers/cookies),
+//   2. stores a private, allowlisted copy of the same RSVP under a
+//      random token in Netlify Blobs, so the notification can link to
+//      a details page without putting guest data in the notification
+//      itself or the URL query string,
+// and it does not touch Netlify Forms' own storage or the site's
+// password gate at all — both keep working exactly as before.
 //
 // Deployed URL (once live): https://<your-site>.netlify.app/.netlify/functions/rsvp-notify
 // That is the exact URL to paste into:
@@ -27,12 +32,18 @@
 //                     via Netlify's X-Webhook-Signature header (HMAC
 //                     SHA-256 JWT) before anything is sent to ntfy. If
 //                     left unset, verification is skipped — the endpoint
-//                     still works, just without that extra check. See
-//                     the final report for how to turn this on.
+//                     still works, just without that extra check.
+//   SITE_URL        - manual override for the site's public base URL,
+//                     used to build the private details link. Netlify
+//                     normally injects this automatically (as URL or
+//                     DEPLOY_PRIME_URL) — only set this if that's ever
+//                     missing or wrong in your setup.
 //
 // ------------------------------------------------------------
 
 const crypto = require("node:crypto");
+const { connectLambda, getStore } = require("@netlify/blobs");
+const { RSVP_STORE_NAME, isAccepting, isDeclining } = require("./_rsvp-shared.js");
 
 const DEFAULT_NTFY_SERVER = "https://ntfy.sh";
 
@@ -95,7 +106,7 @@ function verifyWebhookSignature(rawBody, signatureHeader, secret) {
 // reasonable shapes defensively rather than assuming one exact
 // structure. Either way, only the specific field names below are ever
 // read — nothing else in the webhook body (ip, user_agent, headers,
-// etc.) is ever touched, let alone forwarded.
+// etc.) is ever touched, let alone forwarded or stored.
 // ------------------------------------------------------------
 
 function extractSubmittedFields(parsedBody) {
@@ -123,37 +134,99 @@ function extractSubmittedFields(parsedBody) {
   };
 }
 
+// The webhook's own submission timestamp, when present, so the
+// details page can show exactly when the guest actually responded
+// rather than when this function happened to run.
+function extractSubmittedAt(parsedBody) {
+  const candidates = [
+    parsedBody && parsedBody.payload && parsedBody.payload.created_at,
+    parsedBody && parsedBody.created_at
+  ];
+
+  const found = candidates.find((candidate) => typeof candidate === "string" && candidate);
+  return found || new Date().toISOString();
+}
+
+// ------------------------------------------------------------
+// Private details record (Netlify Blobs)
+// ------------------------------------------------------------
+
+function resolveBaseUrl() {
+  // Netlify injects URL (and DEPLOY_PRIME_URL) into every function's
+  // environment automatically — SITE_URL is only a manual fallback.
+  const base = process.env.URL || process.env.DEPLOY_PRIME_URL || process.env.SITE_URL;
+  return base ? base.replace(/\/+$/, "") : null;
+}
+
+// Stores an allowlisted copy of the RSVP under a fresh random token
+// and returns the private details URL — or null if anything about
+// this step fails, so the caller can fall back to a notification
+// without a broken link instead of losing the notification entirely.
+async function storeRsvpRecord(event, fields, submittedAt) {
+  const baseUrl = resolveBaseUrl();
+  if (!baseUrl) {
+    console.error("[rsvp-notify] No site base URL available (URL/DEPLOY_PRIME_URL/SITE_URL all unset) — skipping details link.");
+    return null;
+  }
+
+  try {
+    // Required before getStore() when running in Lambda-compatibility
+    // mode (the classic exports.handler style this function uses) —
+    // it reads the Blobs context Netlify attaches to the event.
+    connectLambda(event);
+
+    const store = getStore(RSVP_STORE_NAME);
+    const token = crypto.randomUUID();
+
+    const record = {
+      name: fields.name,
+      phone: fields.phone,
+      attendance: fields.attendance,
+      guests: fields.guests,
+      message: fields.message,
+      guest_type: fields.guest_type,
+      submitted_at: submittedAt
+    };
+
+    await store.setJSON(token, record);
+
+    return `${baseUrl}/rsvp/view/${token}`;
+  } catch (error) {
+    console.error("[rsvp-notify] Failed to store private RSVP record:", error.message);
+    return null;
+  }
+}
+
 // ------------------------------------------------------------
 // Notification formatting
 // ------------------------------------------------------------
 
-function isAccepting(attendance) {
-  return attendance.toLowerCase().includes("accept");
+function formatGuestCountLine(guests) {
+  if (!guests) {
+    return null;
+  }
+
+  return guests === "1" ? "1 guest" : `${guests} guests`;
 }
 
-function isDeclining(attendance) {
-  return attendance.toLowerCase().includes("declin");
-}
-
-function buildNotification(fields) {
+function buildNotification(fields, viewUrl) {
   const accepting = isAccepting(fields.attendance);
   const declining = isDeclining(fields.attendance);
 
   const verb = accepting ? "accepted 🎉" : declining ? "declined" : fields.attendance || "responded";
   const name = fields.name || "A guest";
 
-  const lines = [
-    `${name} ${verb}`,
-    `Guests: ${fields.guests || "-"}`,
-    `Phone: ${fields.phone || "-"}`
-  ];
+  const lines = [`${name} ${verb}`];
 
-  if (fields.message) {
-    lines.push(`Message: "${fields.message}"`);
+  if (accepting) {
+    const guestLine = formatGuestCountLine(fields.guests);
+    if (guestLine) {
+      lines.push(guestLine);
+    }
   }
 
-  if (fields.guest_type) {
-    lines.push(`Guest type: ${fields.guest_type}`);
+  if (viewUrl) {
+    lines.push("Tap to view details");
   }
 
   const tags = ["ring"];
@@ -163,12 +236,18 @@ function buildNotification(fields) {
     tags.push("x");
   }
 
-  return {
+  const notification = {
     title: "💍 New Wedding RSVP",
     message: lines.join("\n"),
     tags,
     priority: 4 // ntfy "high" priority
   };
+
+  if (viewUrl) {
+    notification.click = viewUrl;
+  }
+
+  return notification;
 }
 
 async function publishToNtfy(notification, topic, server) {
@@ -227,17 +306,21 @@ exports.handler = async (event) => {
     return { statusCode: 200, body: "ignored: NTFY_TOPIC not configured" };
   }
 
+  const submittedAt = extractSubmittedAt(parsedBody);
+
+  // A storage failure never blocks the notification — it just falls
+  // back to one without a working link (see storeRsvpRecord above).
+  // The RSVP itself is already safely stored by Netlify Forms
+  // regardless of what happens from here on.
+  const viewUrl = await storeRsvpRecord(event, fields, submittedAt);
+
   const server = process.env.NTFY_SERVER || DEFAULT_NTFY_SERVER;
-  const notification = buildNotification(fields);
+  const notification = buildNotification(fields, viewUrl);
 
   try {
     await publishToNtfy(notification, topic, server);
   } catch (error) {
     console.error("[rsvp-notify] Failed to publish to ntfy:", error.message);
-    // Still 200: the RSVP itself was already safely stored by Netlify
-    // Forms before this webhook ever fired, so there's nothing to roll
-    // back — a failed push notification shouldn't look like a failed
-    // RSVP to Netlify's retry logic.
     return { statusCode: 200, body: "stored, but ntfy publish failed" };
   }
 

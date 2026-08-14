@@ -5,3 +5,6 @@
 
 # Netlify CLI local state
 .netlify/
+
+# npm dependencies (installed fresh by Netlify on deploy from package.json)
+node_modules/

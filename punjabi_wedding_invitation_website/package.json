@@ -1,0 +1,8 @@
+{
+  "name": "punjabi-wedding-invitation-website",
+  "private": true,
+  "description": "Static wedding invitation site. This package.json exists only so Netlify installs the one dependency the RSVP notification functions need — the site itself has no build step.",
+  "dependencies": {
+    "@netlify/blobs": "^10.7.13"
+  }
+}
