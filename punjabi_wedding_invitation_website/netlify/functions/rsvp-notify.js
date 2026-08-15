@@ -189,6 +189,10 @@ async function storeRsvpRecord(event, fields, submittedAt) {
     };
 
     await store.setJSON(token, record);
+    // Token only (no guest data) — lets the write side be directly
+    // compared against rsvp-view.js's "token not found" log line if a
+    // record still can't be retrieved after this fix.
+    console.log("[rsvp-notify] Stored private RSVP record under token:", token);
 
     return `${baseUrl}/rsvp/view/${token}`;
   } catch (error) {

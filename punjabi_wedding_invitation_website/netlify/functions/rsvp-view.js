@@ -4,9 +4,10 @@
 //
 // Renders the page a guest's RSVP notification links to. Reached via
 // the clean URL /rsvp/view/<token>, which netlify.toml rewrites to
-// this function (?token=<token>) — see the redirect rule there and
-// the exemption in netlify/edge-functions/auth-gate.js that lets this
-// one route bypass the site's guest password gate. The token itself
+// this function with the token in the PATH (/.netlify/functions/rsvp-view/<token>)
+// — see the redirect rule there and the exemption in
+// netlify/edge-functions/auth-gate.js that lets this one route bypass
+// the site's guest password gate. The token itself
 // is the only thing that authorizes viewing a given RSVP: it's a
 // cryptographically random crypto.randomUUID() (122 bits of entropy),
 // used purely as an opaque lookup key into Netlify Blobs — nothing
@@ -82,6 +83,26 @@ function formatSubmittedAt(isoString) {
 // text still shows exactly what the guest typed (escaped, not altered).
 function sanitizePhoneForHref(phone) {
   return phone.replace(/[^0-9+\-() ]/g, "");
+}
+
+// Netlify has a known issue where a redirect placeholder substituted
+// into a query string in netlify.toml's `to` field comes through
+// empty (https://github.com/netlify/cli/issues/4273), so the token
+// travels in the path instead (see netlify.toml) and is read from
+// event.path here — the last path segment, regardless of whether that
+// path is the original /rsvp/view/<token> or the rewritten
+// /.netlify/functions/rsvp-view/<token>, since the token is the last
+// segment either way. The query string is still checked first as a
+// harmless fallback in case that ever works too.
+function extractToken(event) {
+  const fromQuery = event.queryStringParameters && event.queryStringParameters.token;
+  if (fromQuery) {
+    return fromQuery;
+  }
+
+  const path = event.path || "";
+  const segments = path.split("/").filter(Boolean);
+  return segments.length ? segments[segments.length - 1] : null;
 }
 
 // ------------------------------------------------------------
@@ -319,9 +340,13 @@ exports.handler = async (event) => {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
 
-  const token = event.queryStringParameters && event.queryStringParameters.token;
+  const token = extractToken(event);
 
   if (!token || !TOKEN_PATTERN.test(token)) {
+    console.error("[rsvp-view] No usable token in this request.", {
+      path: event.path,
+      queryStringParameters: event.queryStringParameters
+    });
     return htmlResponse(404, renderNotFoundPage());
   }
 
@@ -330,13 +355,23 @@ exports.handler = async (event) => {
   try {
     connectLambda(event);
     const store = getStore(RSVP_STORE_NAME);
-    record = await store.get(token, { type: "json" });
+    // Strong consistency: Netlify Blobs' default eventual-consistency
+    // reads are cached at the edge and can lag a very recent write by
+    // up to ~60s — a guest could plausibly tap the notification before
+    // that catches up. This read is low-traffic enough that the extra
+    // latency is a non-issue.
+    record = await store.get(token, { type: "json", consistency: "strong" });
   } catch (error) {
     console.error("[rsvp-view] Failed to read RSVP record from storage:", error.message);
     return htmlResponse(404, renderNotFoundPage());
   }
 
   if (!record) {
+    // Reached only with a well-formed token that simply isn't in the
+    // store — logged (token only, no guest data) so this is
+    // distinguishable from the "no usable token" case above if the
+    // page still shows "not found" after this fix.
+    console.error("[rsvp-view] Token was well-formed but not found in storage:", token);
     return htmlResponse(404, renderNotFoundPage());
   }
 

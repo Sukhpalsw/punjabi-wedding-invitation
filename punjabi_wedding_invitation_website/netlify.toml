@@ -14,7 +14,15 @@
 # both this path and the underlying function path in
 # netlify/edge-functions/auth-gate.js — without it, the guest password
 # gate would intercept this before it ever reached the rewrite.
+#
+# The token is passed via the PATH, not a query string, on purpose:
+# Netlify has a known issue where a placeholder substituted into a
+# query string in `to` (e.g. "...?token=:token") comes through empty —
+# see https://github.com/netlify/cli/issues/4273 and
+# https://answers.netlify.com/t/redirect-to-function-splat-is-not-working-as-expected/20975.
+# Putting it in the path instead and reading it from event.path in
+# rsvp-view.js is Netlify's own documented workaround.
 [[redirects]]
   from = "/rsvp/view/:token"
-  to = "/.netlify/functions/rsvp-view?token=:token"
+  to = "/.netlify/functions/rsvp-view/:token"
   status = 200
